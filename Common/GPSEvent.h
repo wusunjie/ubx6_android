@@ -1,0 +1,25 @@
+#ifndef _GPS_EVENT_H
+#define _GPS_EVENT_H
+
+#include <stddef.h>
+
+struct GPSEvent {
+	int ev;
+	int fd;
+	enum GPSEventMode mode;
+};
+
+enum GPSEventMode {
+	GPS_EVENT_MODE_BLOCK    = 0,
+	GPS_EVENT_MODE_NONBLOCK = 1,
+};
+
+extern int GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode);
+
+extern int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len);
+
+extern int GPSEventWrite(struct GPSEvent *event, void *buffer, size_t len);
+
+extern int GPSEventClose(struct GPSEvent *event);
+
+#endif
