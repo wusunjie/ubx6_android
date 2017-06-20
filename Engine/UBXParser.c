@@ -1,8 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "Device/GPSDevice.h"
+#include "Device/GPSDeviceIF.h"
 
 enum UBXClassID {
 	UBX_CLASS_ID_NAV = 0x01,
@@ -34,15 +35,16 @@ int UBXPacketRead(void)
 	struct UBXPacketHeader header;
 	GetGPSComDevice()->read(&header, sizeof(header));
 	if (!IsUBXPacketValid(&header)) {
-		header.payload_check = (unsigned char *)malloc(header.length + 2);
-		if (header.payload_check) {
-			GetGPSComDevice()->read(header.payload_check, header.length + 2);
-			if (!CheckUBXPacket(&header)) {
-				if (!UBXPacketParse(&header)) {
+		struct UBXPacketHeader *packet = (struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
+		memcpy(packet, &header, sizeof(header));
+		if (packet->payload_check) {
+			GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
+			if (!CheckUBXPacket(packet)) {
+				if (!UBXPacketParse(packet)) {
 					ret = 0;
 				}
 			}
-			free(header.payload_check);
+			free(packet);
 		}
 	}
 	return ret;
@@ -65,15 +67,15 @@ static int CheckUBXPacket(struct UBXPacketHeader *header)
 	uint8_t check_a = 0, check_b = 0;
 	size_t i;
 	uint8_t *buffer = &(header->ubx_class);
-	for (i = 0; i < 4 + header.length; i++) {
+	for (i = 0; i < 4 + header->length; i++) {
 		check_a += buffer[i];
 		check_b += check_a;
 	}
 
-	if (check_a != *(uint8_t *)(header->payload_check[header->length])) {
+	if (check_a != header->payload_check[header->length]) {
 		return -1;
 	}
-	if (check_b != *(uint8_t *)(header->payload_check[header->length + 1])) {
+	if (check_b != header->payload_check[header->length + 1]) {
 		return -1;
 	}
 }

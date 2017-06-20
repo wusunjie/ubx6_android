@@ -5,29 +5,20 @@
 
 #include <stddef.h>
 
-struct GPSDeviceIF {
-	int (*open)(void);
-	int (*read)(void *buffer, size_t len);
-	int (*write)(void *buffer, size_t len);
-	int (*close)(void);
+struct GPSDeviceBase;
+
+struct GPSDeviceImp {
+	int (*open)(struct GPSDeviceBase *device, int fd);
+	int (*read)(struct GPSDeviceBase *device, void *buffer, size_t len);
+	int (*write)(struct GPSDeviceBase *device, void *buffer, size_t len);
+	int (*close)(struct GPSDeviceBase *device);
 };
 
 struct GPSDeviceBase {
-	int (*OpenOpt)(void);
 	struct GPSEvent event;
 	enum GPSEventMode mode;
-	struct GPSDeviceIF imp;
+	struct GPSDeviceImp imp;
 	int fd;
 };
-
-typedef int (*OpenDeviceOpt)(enum GPSEventMode mode);
-
-extern void GPSDeviceInit(void);
-
-extern struct GPSDeviceIF *GetGPSSNSDevice(void);
-
-extern struct GPSDeviceIF *GetGPSComDevice(void);
-
-extern struct GPSDeviceIF *GetGPSDmdsDevice(void);
 
 #endif

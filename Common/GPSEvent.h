@@ -3,15 +3,15 @@
 
 #include <stddef.h>
 
+enum GPSEventMode {
+	GPS_EVENT_MODE_BLOCK    = 0,
+	GPS_EVENT_MODE_NONBLOCK = 1,
+};
+
 struct GPSEvent {
 	int ev;
 	int fd;
 	enum GPSEventMode mode;
-};
-
-enum GPSEventMode {
-	GPS_EVENT_MODE_BLOCK    = 0,
-	GPS_EVENT_MODE_NONBLOCK = 1,
 };
 
 extern int GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode);

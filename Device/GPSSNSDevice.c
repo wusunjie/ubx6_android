@@ -1,3 +1,5 @@
+#include "GPSDeviceIF.h"
+
 #include "GPSDevice.h"
 
 #include "Pdrd_Def.h"
@@ -6,43 +8,43 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-extern void GPSDeviceSetOpt(struct GPSDeviceBase *device, enum GPSEventMode mode, OpenDeviceOpt OpenDevice);
+
+extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
+
+static int GPSSNSOpen(void);
+static int GPSSNSRead(void *buffer, size_t len);
+static int GPSSNSWrite(void *buffer, size_t len);
+static int GPSSNSClose(void);
 
 static struct GPSDeviceBase SNSDevice = {
-	.fd = -1;
+	.fd = -1
 };
-
-static int GPSSNSOpen(enum GPSEventMode mode);
 
 static const char GPSSNS_DEVICE_PATH[] = "/dev/pdrdctl";
 
 extern void GPSSNSDeviceInit(void)
 {
-	GPSDeviceSetOpt(&SNSDevice, GPS_EVENT_MODE_NONBLOCK, GPSSNSOpen);
+	GPSDeviceSetBase(&SNSDevice, GPS_EVENT_MODE_NONBLOCK);
 }
 
 extern struct GPSDeviceIF *GetGPSSNSDevice(void)
 {
-	return &(SNSDevice.imp);
+	return NULL;
 }
 
 static int GPSSNSOpen(void)
 {
-	if (-1 != SNSDevice.fd) {
-		return 0;
-	}
-
 	int fd = open(GPSSNS_DEVICE_PATH, O_RDWR);
 	if (-1 == fd) {
 		return -1;
 	}
 
-	if (GPS_EVENT_MODE_NONBLOCK == device->mode) {
+	if (GPS_EVENT_MODE_NONBLOCK == SNSDevice.mode) {
 		int flags = fcntl(fd, F_GETFL, 0);
 		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 		if ((-1 == flags) || (O_NONBLOCK & flags != flags)) {
 			/* roll back to BLOCK mode */
-			device->mode = GPS_EVENT_MODE_BLOCK;
+			SNSDevice.mode = GPS_EVENT_MODE_BLOCK;
 		}
 	}
 
@@ -57,13 +59,27 @@ static int GPSSNSOpen(void)
 		return -1;
 	}
 
-	if (device->mode == GPS_EVENT_MODE_NONBLOCK) {
-		if (-1 == GPSEventInit(&SNSDevice.event, fd, device->mode)) {
+	if (SNSDevice.mode == GPS_EVENT_MODE_NONBLOCK) {
+		if (-1 == GPSEventInit(&SNSDevice.event, fd, SNSDevice.mode)) {
 			close(fd);
 			return -1;
 		}
 	}
 
-	SNSDevice.fd = fd;
-	return 0;
+	return SNSDevice.imp.open(&SNSDevice, fd);
+}
+
+static int GPSSNSRead(void *buffer, size_t len)
+{
+	return SNSDevice.imp.read(&SNSDevice, buffer, len);
+}
+
+static int GPSSNSWrite(void *buffer, size_t len)
+{
+	return SNSDevice.imp.write(&SNSDevice, buffer, len);
+}
+
+static int GPSSNSClose(void)
+{
+	return SNSDevice.imp.close(&SNSDevice);
 }

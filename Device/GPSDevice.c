@@ -1,8 +1,10 @@
 #include "Device/GPSDevice.h"
 
-static int GPSDeviceOpen(struct GPSDeviceBase *device);
-static int GPSDeviceRead(struct GPSDeviceBase *device, void *buffer, size_t len, size_t *result);
-static int GPSDeviceWrite(struct GPSDeviceBase *device, void *buffer, size_t len, size_t *result);
+#include <unistd.h>
+
+static int GPSDeviceOpen(struct GPSDeviceBase *device, int fd);
+static int GPSDeviceRead(struct GPSDeviceBase *device, void *buffer, size_t len);
+static int GPSDeviceWrite(struct GPSDeviceBase *device, void *buffer, size_t len);
 static int GPSDeviceClose(struct GPSDeviceBase *device);
 
 extern void GPSSNSDeviceInit(void);
@@ -14,23 +16,17 @@ extern void GPSDeviceInit(void)
 	GPSComDeviceInit();
 }
 
-extern void GPSDeviceSetOpt(struct GPSDeviceBase *device, enum GPSEventMode mode, OpenDeviceOpt OpenDevice)
+extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode)
 {
-	device->mode = mode;
-	device->OpenOpt = OpenDevice;
-	device->imp.open = OpenDeviceOpen;
-	device->imp.read = GPSDeviceRead;
-	device->imp.write = GPSDeviceWrite;
-	device->imp.close = GPSDeviceClose;	
+	base->imp.open = GPSDeviceOpen;
+	base->imp.read = GPSDeviceRead;
+	base->imp.write = GPSDeviceWrite;
+	base->imp.close = GPSDeviceClose;
+	base->mode = mode;
 }
 
-static int GPSDeviceOpen(struct GPSDeviceBase *device)
+static int GPSDeviceOpen(struct GPSDeviceBase *device, int fd)
 {
-	int fd = device->OpenOpt(device, device->mode);
-	if (-1 == fd) {
-		return -1;
-	}
-
 	device->fd = fd;
 
 	if (-1 == GPSEventInit(&(device->event), device->fd, device->mode)) {
