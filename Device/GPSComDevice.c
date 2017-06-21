@@ -13,6 +13,13 @@ static int GPSComRead(void *buffer, size_t len);
 static int GPSComWrite(void *buffer, size_t len);
 static int GPSComClose(void);
 
+static const struct GPSDeviceIF ComDeviceImp = {
+	.open = GPSComOpen,
+	.read = GPSComRead,
+	.write = GPSComWrite,
+	.close = GPSComClose
+};
+
 static struct GPSDeviceBase ComDevice = {
 	.fd = -1
 };
@@ -24,9 +31,9 @@ extern void GPSComDeviceInit(void)
 	GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_NONBLOCK);
 }
 
-extern struct GPSDeviceIF *GetGPSComDevice(void)
+extern const struct GPSDeviceIF *GetGPSComDevice(void)
 {
-	return NULL;
+	return &ComDeviceImp;
 }
 
 static int GPSComOpen(void)
@@ -39,7 +46,7 @@ static int GPSComOpen(void)
 	if (GPS_EVENT_MODE_NONBLOCK == ComDevice.mode) {
 		int flags = fcntl(fd, F_GETFL, 0);
 		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-		if ((-1 == flags) || (O_NONBLOCK & flags != flags)) {
+		if ((-1 == flags) || ((O_NONBLOCK & flags) != flags)) {
 			/* roll back to BLOCK mode */
 			ComDevice.mode = GPS_EVENT_MODE_BLOCK;
 		}

@@ -16,6 +16,13 @@ static int GPSSNSRead(void *buffer, size_t len);
 static int GPSSNSWrite(void *buffer, size_t len);
 static int GPSSNSClose(void);
 
+static const struct GPSDeviceIF SNSDeviceImp = {
+	.open = GPSSNSOpen,
+	.read = GPSSNSRead,
+	.write = GPSSNSWrite,
+	.close = GPSSNSClose
+};
+
 static struct GPSDeviceBase SNSDevice = {
 	.fd = -1
 };
@@ -27,9 +34,9 @@ extern void GPSSNSDeviceInit(void)
 	GPSDeviceSetBase(&SNSDevice, GPS_EVENT_MODE_NONBLOCK);
 }
 
-extern struct GPSDeviceIF *GetGPSSNSDevice(void)
+extern const struct GPSDeviceIF *GetGPSSNSDevice(void)
 {
-	return NULL;
+	return &SNSDeviceImp;
 }
 
 static int GPSSNSOpen(void)
@@ -42,7 +49,7 @@ static int GPSSNSOpen(void)
 	if (GPS_EVENT_MODE_NONBLOCK == SNSDevice.mode) {
 		int flags = fcntl(fd, F_GETFL, 0);
 		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-		if ((-1 == flags) || (O_NONBLOCK & flags != flags)) {
+		if ((-1 == flags) || ((O_NONBLOCK & flags) != flags)) {
 			/* roll back to BLOCK mode */
 			SNSDevice.mode = GPS_EVENT_MODE_BLOCK;
 		}

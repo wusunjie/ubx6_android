@@ -78,6 +78,8 @@ static int CheckUBXPacket(struct UBXPacketHeader *header)
 	if (check_b != header->payload_check[header->length + 1]) {
 		return -1;
 	}
+
+	return 0;
 }
 
 static int UBXPacketParse(struct UBXPacketHeader *header)
@@ -100,6 +102,7 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
 		default:
 		break;
 	}
+	return 0;
 }
 
 

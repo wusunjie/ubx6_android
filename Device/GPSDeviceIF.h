@@ -12,10 +12,10 @@ struct GPSDeviceIF {
 
 extern void GPSDeviceInit(void);
 
-extern struct GPSDeviceIF *GetGPSSNSDevice(void);
+extern const struct GPSDeviceIF *GetGPSSNSDevice(void);
 
-extern struct GPSDeviceIF *GetGPSComDevice(void);
+extern const struct GPSDeviceIF *GetGPSComDevice(void);
 
-extern struct GPSDeviceIF *GetGPSDmdsDevice(void);
+extern const struct GPSDeviceIF *GetGPSDmdsDevice(void);
 
 #endif
