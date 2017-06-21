@@ -29,23 +29,33 @@ static int IsUBXPacketValid(struct UBXPacketHeader *header);
 static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
 
+static int ReadNMEAString(void);
+
 int UBXPacketRead(void)
 {
 	int ret = -1;
 	struct UBXPacketHeader header;
-	GetGPSComDevice()->read(&header, sizeof(header));
-	if (!IsUBXPacketValid(&header)) {
-		struct UBXPacketHeader *packet = (struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
-		memcpy(packet, &header, sizeof(header));
-		if (packet->payload_check) {
-			GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
-			if (!CheckUBXPacket(packet)) {
-				if (!UBXPacketParse(packet)) {
-					ret = 0;
+	uint8_t start = 0;
+	GetGPSComDevice()->read(&start, 1);
+	if (0xB5 == start) {
+		header.sync_char[0] = start;
+		GetGPSComDevice()->read(&(header.sync_char[1]), sizeof(header) - 1);
+		if (!IsUBXPacketValid(&header)) {
+			struct UBXPacketHeader *packet = (struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
+			memcpy(packet, &header, sizeof(header));
+			if (packet->payload_check) {
+				GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
+				if (!CheckUBXPacket(packet)) {
+					if (!UBXPacketParse(packet)) {
+						ret = 0;
+					}
 				}
+				free(packet);
 			}
-			free(packet);
 		}
+	}
+	else if ('$' == start]) {
+		ReadNMEAString();
 	}
 	return ret;
 }
