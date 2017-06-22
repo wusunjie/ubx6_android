@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "Device/GPSDeviceIF.h"
 
@@ -17,6 +18,23 @@ enum UBXClassID {
 	UBX_CLASS_ID_ESF = 0x10,
 };
 
+enum NMEAMsgType {
+	NMEA_MSG_TYPE_DTM,
+	NMEA_MSG_TYPE_GBS,
+	NMEA_MSG_TYPE_GGA,
+	NMEA_MSG_TYPE_GLL,
+	NMEA_MSG_TYPE_GPQ,
+	NMEA_MSG_TYPE_GRS,
+	NMEA_MSG_TYPE_GSA,
+	NMEA_MSG_TYPE_GST,
+	NMEA_MSG_TYPE_GSV,
+	NMEA_MSG_TYPE_RMC,
+	NMEA_MSG_TYPE_THS,
+	NMEA_MSG_TYPE_TXT,
+	NMEA_MSG_TYPE_VTG,
+	NMEA_MSG_TYPE_ZDA,
+};
+
 struct UBXPacketHeader {
 	uint8_t sync_char[2];
 	uint8_t ubx_class;
@@ -30,6 +48,7 @@ static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
 
 static int ReadNMEAString(void);
+static enum NMEAMsgType ParseNMEAMsgType(char *str);
 
 int UBXPacketRead(void)
 {
@@ -41,7 +60,8 @@ int UBXPacketRead(void)
 		header.sync_char[0] = start;
 		GetGPSComDevice()->read(&(header.sync_char[1]), sizeof(header) - 1);
 		if (!IsUBXPacketValid(&header)) {
-			struct UBXPacketHeader *packet = (struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
+			struct UBXPacketHeader *packet =
+			(struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
 			memcpy(packet, &header, sizeof(header));
 			if (packet->payload_check) {
 				GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
@@ -54,7 +74,7 @@ int UBXPacketRead(void)
 			}
 		}
 	}
-	else if ('$' == start]) {
+	else if ('$' == start) {
 		ReadNMEAString();
 	}
 	return ret;
@@ -115,20 +135,71 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
 	return 0;
 }
 
+static int ReadNMEAString(void)
+{
+	uint8_t status = 0;
+	uint8_t data = 0;
+	char strBuffer[254] = {0};
+	size_t pos = 0;
+	while (1 == GetGPSComDevice()->read(&data, 1)) {
+		switch (status) {
+			case 0:
+			{
+				if ('\r' == data) {
+					status = 1;
+				}
+				else {
+					strBuffer[pos] = data;
+					pos++;
+				}
+			}
+			break;
+			case 1:
+			{
+				if ('\n' == data) {
+					if ('*' == strBuffer[pos - 3]) {
+						ssize_t i;
+						uint16_t checksum = 0;
+						uint16_t sum = 0;
+						sscanf(&strBuffer[pos - 2], "%hx", &checksum);
+						for (i = 0; i < pos - 3; i++) {
+							sum += strBuffer[i];
+						}
+						if (sum == checksum) {
+							enum NMEAMsgType type;
+							char *pch = strtok(strBuffer, ",");
+							if (pch) {
+								int flag = 0;
+								if ('P' == pch[0]) {
+									flag = 1;
+								}
+								else if (('G' == pch[0]) && ('P' == pch[1])) {
+									flag = 2;
+								}
+								if (flag) {
+									type = ParseNMEAMsgType(pch + flag);
+									(void)type;
+									do {
+										pch = strtok(NULL, ",");
+									} while (pch);
+									return 0;
+								}
+							}
+						}
+					}
+				}
+				else {
+					return -1;
+				}
+			}
+			break;
+		}
+	}
+	return -1;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+static enum NMEAMsgType ParseNMEAMsgType(char *str)
+{
+	(void)str;
+	return NMEA_MSG_TYPE_ZDA;
+}
