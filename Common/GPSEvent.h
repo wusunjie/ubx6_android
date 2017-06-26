@@ -9,12 +9,11 @@ enum GPSEventMode {
 };
 
 struct GPSEvent {
-	int ev;
 	int fd;
 	enum GPSEventMode mode;
 };
 
-extern int GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode);
+extern void GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode);
 
 extern int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len);
 

@@ -9,16 +9,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-int GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode)
+void GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode)
 {
-	int ev = eventfd(0, EFD_NONBLOCK);
-	if (-1 != ev) {
-		event->fd = fd;
-		event->mode = mode;
-		event->ev = ev;
-		return 0;
-	}
-	return -1;
+	event->fd = fd;
+	event->mode = mode;
 }
 
 int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len)
@@ -32,12 +26,10 @@ int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len)
     tv.tv_usec = 0;
     FD_ZERO(&efds);
     FD_ZERO(&rfds);
-    FD_SET(event->ev, &rfds);
-    FD_SET(event->ev, &efds);
     FD_SET(event->fd, &rfds);
     FD_SET(event->fd, &efds);
     while (1) {
-        ret = select((event->ev > event->fd ? event->ev:event->fd) + 1, &rfds, 0, &efds, &tv);
+        ret = select(event->fd + 1, &rfds, 0, &efds, &tv);
         if ((ret < 0) && (EINTR == errno)) {
             /* do nothing */
         }
@@ -45,13 +37,6 @@ int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len)
             int i;
             for (i = 0; i < ret; i++) {
                 if (FD_ISSET(event->fd, &efds)) {
-                    return -1;
-                }
-                else if (FD_ISSET(event->ev, &rfds)) {
-                    uint64_t val;
-                    read(event->ev, &val, 8);
-                    close(event->fd);
-                    close(event->ev);
                     return -1;
                 }
                 else if (FD_ISSET(event->fd, &rfds)) {
@@ -97,10 +82,9 @@ int GPSEventWrite(struct GPSEvent *event, void *buffer, size_t len)
     FD_ZERO(&rfds);
     FD_ZERO(&efds);
     FD_SET(event->fd, &wfds);
-    FD_SET(event->ev, &rfds);
     FD_SET(event->fd, &efds);
     while (len) {
-        ret = select((event->ev > event->fd ? event->ev:event->fd) + 1, &rfds, &wfds, &efds, &tv);
+        ret = select(event->fd + 1, &rfds, &wfds, &efds, &tv);
         if ((ret < 0) && (EINTR == errno)) {
             /* do nothing */
         }
@@ -108,13 +92,6 @@ int GPSEventWrite(struct GPSEvent *event, void *buffer, size_t len)
             int i;
             for (i = 0; i < ret; i++) {
                 if (FD_ISSET(event->fd, &efds)) {
-                    return -1;
-                }
-                else if (FD_ISSET(event->ev, &rfds)) {
-                    uint64_t val;
-                    read(event->ev, &val, 8);
-                    close(event->fd);
-                    close(event->ev);
                     return -1;
                 }
                 else if (FD_ISSET(event->fd, &wfds)) {
@@ -148,6 +125,7 @@ write_intr:
 
 int GPSEventClose(struct GPSEvent *event)
 {
-	uint64_t val = 1;
-    return write(event->ev, &val, 8);
+    int ret = close(event->fd);
+    event->fd = -1;
+    return ret;
 }
