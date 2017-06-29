@@ -1,10 +1,16 @@
 #include "Engine/UBXCtrlHandler.h"
 
+#include "Device/GPSDeviceIF.h"
+
 extern int UBXPacketRead(void);
 
 int main(void)
 {
 	int bTemp = 0;
+
+	GPSDeviceInit();
+
+	GetGPSComDevice()->open();
 
 	bTemp = SetGpsRate();
 
