@@ -46,15 +46,6 @@ static int GPSSNSOpen(void)
 		return -1;
 	}
 
-	if (GPS_EVENT_MODE_NONBLOCK == SNSDevice.mode) {
-		int flags = fcntl(fd, F_GETFL, 0);
-		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-		if ((-1 == flags) || ((O_NONBLOCK & flags) != flags)) {
-			/* roll back to BLOCK mode */
-			SNSDevice.mode = GPS_EVENT_MODE_BLOCK;
-		}
-	}
-
 	PDRD_SAMPLEGAPCTL GapCtrl;
 	GapCtrl.SensorGap = 10;
 	GapCtrl.TemperatureGap = 50;
@@ -64,13 +55,6 @@ static int GPSSNSOpen(void)
 	if (-1 == ret) {
 		close(fd);
 		return -1;
-	}
-
-	if (SNSDevice.mode == GPS_EVENT_MODE_NONBLOCK) {
-		if (-1 == GPSEventInit(&SNSDevice.event, fd, SNSDevice.mode)) {
-			close(fd);
-			return -1;
-		}
 	}
 
 	return SNSDevice.imp.open(&SNSDevice, fd);

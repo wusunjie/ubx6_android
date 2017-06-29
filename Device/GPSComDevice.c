@@ -1,9 +1,10 @@
 #include "GPSDeviceIF.h"
 #include "GPSDevice.h"
 
-#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/ioctl.h>
+
 #include <termios.h>
 
 extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
@@ -41,24 +42,6 @@ static int GPSComOpen(void)
 	int fd = open(GPSCOM_DEVICE_PATH, O_RDWR);
 	if (-1 == fd) {
 		return -1;
-	}
-
-	if (GPS_EVENT_MODE_NONBLOCK == ComDevice.mode) {
-		int flags = fcntl(fd, F_GETFL, 0);
-		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-		if ((-1 == flags) || ((O_NONBLOCK & flags) != flags)) {
-			/* roll back to BLOCK mode */
-			ComDevice.mode = GPS_EVENT_MODE_BLOCK;
-		}
-	}
-
-	/* set serial port parameters. */
-
-	if (GPS_EVENT_MODE_NONBLOCK == ComDevice.mode) {
-		if (-1 == GPSEventInit(&ComDevice.event, fd, ComDevice.mode)) {
-			close(fd);
-			return -1;
-		}
 	}
 
 	return ComDevice.imp.open(&ComDevice, fd);

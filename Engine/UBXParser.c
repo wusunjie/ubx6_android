@@ -63,15 +63,13 @@ int UBXPacketRead(void)
 			struct UBXPacketHeader *packet =
 			(struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
 			memcpy(packet, &header, sizeof(header));
-			if (packet->payload_check) {
-				GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
-				if (!CheckUBXPacket(packet)) {
-					if (!UBXPacketParse(packet)) {
-						ret = 0;
-					}
+			GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
+			if (!CheckUBXPacket(packet)) {
+				if (!UBXPacketParse(packet)) {
+					ret = 0;
 				}
-				free(packet);
 			}
+			free(packet);
 		}
 	}
 	else if ('$' == start) {
@@ -158,7 +156,7 @@ static int ReadNMEAString(void)
 			{
 				if ('\n' == data) {
 					if ('*' == strBuffer[pos - 3]) {
-						ssize_t i;
+						size_t i;
 						uint16_t checksum = 0;
 						uint16_t sum = 0;
 						sscanf(&strBuffer[pos - 2], "%hx", &checksum);

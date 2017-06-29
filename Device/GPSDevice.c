@@ -1,6 +1,8 @@
 #include "Device/GPSDevice.h"
 
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
 static int GPSDeviceOpen(struct GPSDeviceBase *device, int fd);
 static int GPSDeviceRead(struct GPSDeviceBase *device, void *buffer, size_t len);
@@ -12,7 +14,7 @@ extern void GPSComDeviceInit(void);
 
 extern void GPSDeviceInit(void)
 {
-	GPSSNSDeviceInit();
+/*	GPSSNSDeviceInit(); */
 	GPSComDeviceInit();
 }
 
@@ -29,10 +31,19 @@ static int GPSDeviceOpen(struct GPSDeviceBase *device, int fd)
 {
 	device->fd = fd;
 
-	if (-1 == GPSEventInit(&(device->event), device->fd, device->mode)) {
-		close(fd);
-		device->fd = -1;
-		return -1;
+	if (GPS_EVENT_MODE_NONBLOCK == device->mode) {
+		int flags = fcntl(fd, F_GETFL, 0);
+		flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+		if ((-1 == flags) || ((O_NONBLOCK & flags) != flags)) {
+			/* roll back to BLOCK mode */
+			device->mode = GPS_EVENT_MODE_BLOCK;
+		}
+	}
+
+	/* set serial port parameters. */
+
+	if (GPS_EVENT_MODE_NONBLOCK == device->mode) {
+		GPSEventInit(&(device->event), fd, device->mode);
 	}
 
 	return 0;

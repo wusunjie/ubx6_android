@@ -1,7 +1,9 @@
 #ifndef _UBX_CTRL_HANDLER_H
 #define _UBX_CTRL_HANDLER_H
 
-extern int WriteUbxCfgRate(void);
+#include <stdint.h>
+
+extern int SetGpsRate(void);
 
 extern int SetGpsVerion(void);
 
