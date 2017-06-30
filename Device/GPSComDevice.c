@@ -29,7 +29,7 @@ static const char GPSCOM_DEVICE_PATH[] = "/dev/GPSCOM";
 
 extern void GPSComDeviceInit(void)
 {
-	GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_NONBLOCK);
+	GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_BLOCK);
 }
 
 extern const struct GPSDeviceIF *GetGPSComDevice(void)

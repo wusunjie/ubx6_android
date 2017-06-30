@@ -41,9 +41,7 @@ static int GPSDeviceOpen(struct GPSDeviceBase *device, int fd)
 
 	/* set serial port parameters. */
 
-	if (GPS_EVENT_MODE_NONBLOCK == device->mode) {
-		GPSEventInit(&(device->event), fd, device->mode);
-	}
+	GPSEventInit(&(device->event), fd, device->mode);
 
 	return 0;
 }
