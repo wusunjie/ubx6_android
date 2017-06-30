@@ -14,7 +14,6 @@ extern void GPSComDeviceInit(void);
 
 extern void GPSDeviceInit(void)
 {
-/*	GPSSNSDeviceInit(); */
 	GPSComDeviceInit();
 }
 
