@@ -165,6 +165,7 @@ static int ReadNMEAString(void)
 						}
 						if (sum == checksum) {
 							enum NMEAMsgType type;
+							strBuffer[pos - 3] = '\0';
 							char *pch = strtok(strBuffer, ",");
 							if (pch) {
 								int flag = 0;
@@ -176,8 +177,81 @@ static int ReadNMEAString(void)
 								}
 								if (flag) {
 									type = ParseNMEAMsgType(pch + flag);
-									(void)type;
 									do {
+										switch (type) {
+											case NMEA_MSG_TYPE_DTM:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GBS:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GGA:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GLL:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GPQ:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GRS:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GSA:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GST:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_GSV:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_RMC:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_THS:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_TXT:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_VTG:
+											{
+
+											}
+											break;
+											case NMEA_MSG_TYPE_ZDA:
+											{
+
+											}
+											break;
+											default:
+											break;
+										}
 										pch = strtok(NULL, ",");
 									} while (pch);
 									return 0;
