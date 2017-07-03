@@ -6,6 +6,8 @@
 #include <fcntl.h>
 
 #include <termios.h>
+#include <unistd.h>
+#include <string.h>
 
 extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
 
@@ -43,6 +45,29 @@ static int GPSComOpen(void)
 	if (-1 == fd) {
 		return -1;
 	}
+
+	//set com attribute if open success
+	struct termios attr;
+	memset(&attr, 0, sizeof(attr));
+
+	//set contro/input/output/local flags
+	attr.c_cflag |=CLOCAL | CREAD;
+	attr.c_cflag &= ~PARENB;
+	attr.c_iflag &= ~IXON;
+	attr.c_iflag &= ~INPCK;
+	attr.c_cflag &= ~CSTOPB;
+	attr.c_cflag &= ~CSIZE;
+	attr.c_cflag |= CS8;
+	attr.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+	attr.c_oflag &= ~OPOST;
+	attr.c_cc[VTIME] = 0;
+	attr.c_cc[VMIN] = 1;
+
+	cfsetispeed(&attr, 9600);
+	cfsetospeed(&attr, 9600);
+	tcsetattr(fd, TCSANOW, &attr);
+
+	tcflush(fd, TCIOFLUSH);
 
 	return ComDevice.imp.open(&ComDevice, fd);
 }
