@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "Engine/minmea.h"
+
 #include "Device/GPSDeviceIF.h"
 
 enum UBXClassID {
@@ -18,23 +20,6 @@ enum UBXClassID {
 	UBX_CLASS_ID_ESF = 0x10,
 };
 
-enum NMEAMsgType {
-	NMEA_MSG_TYPE_DTM,
-	NMEA_MSG_TYPE_GBS,
-	NMEA_MSG_TYPE_GGA,
-	NMEA_MSG_TYPE_GLL,
-	NMEA_MSG_TYPE_GPQ,
-	NMEA_MSG_TYPE_GRS,
-	NMEA_MSG_TYPE_GSA,
-	NMEA_MSG_TYPE_GST,
-	NMEA_MSG_TYPE_GSV,
-	NMEA_MSG_TYPE_RMC,
-	NMEA_MSG_TYPE_THS,
-	NMEA_MSG_TYPE_TXT,
-	NMEA_MSG_TYPE_VTG,
-	NMEA_MSG_TYPE_ZDA,
-};
-
 struct UBXPacketHeader {
 	uint8_t sync_char[2];
 	uint8_t ubx_class;
@@ -46,9 +31,7 @@ struct UBXPacketHeader {
 static int IsUBXPacketValid(struct UBXPacketHeader *header);
 static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
-
 static int ReadNMEAString(void);
-static enum NMEAMsgType ParseNMEAMsgType(char *str);
 
 int UBXPacketRead(void)
 {
@@ -65,15 +48,13 @@ int UBXPacketRead(void)
 			memcpy(packet, &header, sizeof(header));
 			GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
 			if (!CheckUBXPacket(packet)) {
-				if (!UBXPacketParse(packet)) {
-					ret = 0;
-				}
+				ret = UBXPacketParse(packet);
 			}
 			free(packet);
 		}
 	}
 	else if ('$' == start) {
-		ReadNMEAString();
+		ret = ReadNMEAString();
 	}
 	return ret;
 }
@@ -137,8 +118,9 @@ static int ReadNMEAString(void)
 {
 	uint8_t status = 0;
 	uint8_t data = 0;
-	char strBuffer[254] = {0};
-	size_t pos = 0;
+	char strBuffer[256] = {0};
+	size_t pos = 1;
+	strBuffer[0] = '$';
 	while (1 == GetGPSComDevice()->read(&data, 1)) {
 		switch (status) {
 			case 0:
@@ -155,109 +137,63 @@ static int ReadNMEAString(void)
 			case 1:
 			{
 				if ('\n' == data) {
-					if ('*' == strBuffer[pos - 3]) {
-						size_t i;
-						uint16_t checksum = 0;
-						uint16_t sum = 0;
-						sscanf(&strBuffer[pos - 2], "%hx", &checksum);
-						for (i = 0; i < pos - 3; i++) {
-							sum += strBuffer[i];
+					enum minmea_sentence_id type = minmea_sentence_id(strBuffer, false);
+					if (MINMEA_INVALID == type) {
+						return -1;
+					}
+					switch (type) {
+						case MINMEA_SENTENCE_RMC:
+						{
+							struct minmea_sentence_rmc frame;
+			                if (minmea_parse_rmc(&frame, strBuffer)) {
+
+			                }
+			                else {
+
+			                }
 						}
-						if (sum == checksum) {
-							enum NMEAMsgType type;
-							strBuffer[pos - 3] = '\0';
-							char *pch = strtok(strBuffer, ",");
-							if (pch) {
-								int flag = 0;
-								if ('P' == pch[0]) {
-									flag = 1;
-								}
-								else if (('G' == pch[0]) && ('P' == pch[1])) {
-									flag = 2;
-								}
-								if (flag) {
-									type = ParseNMEAMsgType(pch + flag);
-									do {
-										switch (type) {
-											case NMEA_MSG_TYPE_DTM:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GBS:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GGA:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GLL:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GPQ:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GRS:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GSA:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GST:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_GSV:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_RMC:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_THS:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_TXT:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_VTG:
-											{
-
-											}
-											break;
-											case NMEA_MSG_TYPE_ZDA:
-											{
-
-											}
-											break;
-											default:
-											break;
-										}
-										pch = strtok(NULL, ",");
-									} while (pch);
-									return 0;
-								}
-							}
+						break;
+						case MINMEA_SENTENCE_GGA:
+						{
+							struct minmea_sentence_gga frame;
+				            if (minmea_parse_gga(&frame, strBuffer)) {
+				                
+				            }
+				            else {
+				                
+				            }
 						}
+						break;
+						case MINMEA_SENTENCE_GSA:
+						{
+
+						}
+						break;
+						case MINMEA_SENTENCE_GLL:
+						{
+
+						}
+						break;
+						case MINMEA_SENTENCE_GST:
+						{
+
+						}
+						break;
+						case MINMEA_SENTENCE_GSV:
+						{
+
+						}
+						break;
+						case MINMEA_SENTENCE_VTG:
+						{
+
+						}
+						break;
+						default:
+						{
+							return -1;
+						}
+						break;
 					}
 				}
 				else {
@@ -268,10 +204,4 @@ static int ReadNMEAString(void)
 		}
 	}
 	return -1;
-}
-
-static enum NMEAMsgType ParseNMEAMsgType(char *str)
-{
-	(void)str;
-	return NMEA_MSG_TYPE_ZDA;
 }

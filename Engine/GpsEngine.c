@@ -1,32 +1,12 @@
-#include "Device/GpsDeviceIF.h"
+#include "Device/GPSDeviceIF.h"
 #include "Engine/UBXCtrlHandler.h"
+#include "Engine/UBXParser.h"
 
-struct GpsLocationInfo {
-    /** set to sizeof(GpsLocation) */
-    size_t          size;
-    /** Contains GpsLocationFlags bits. */
-    uint16_t        flags;
-    /** Represents latitude in degrees. */
-    double          latitude;
-    /** Represents longitude in degrees. */
-    double          longitude;
-    /**
-     * Represents altitude in meters above the WGS 84 reference ellipsoid.
-     */
-    double          altitude;
-    /** Represents speed in meters per second. */
-    float           speed;
-    /** Represents heading in degrees. */
-    float           bearing;
-    /** Represents expected accuracy in meters. */
-    float           accuracy;
-    /** Timestamp for the location fix. */
-    int64_t      timestamp;
-};
-
-int GpsEngineInit(void)
+int GpsEngineInit(struct GpsDataCallbacks *cb)
 {
 	GPSDeviceInit();
+    UBXParserInit(cb);
+    return 0;
 }
 
 int GpsEngineSetup(void)
@@ -54,4 +34,9 @@ int GpsEngineSetup(void)
 	}
 
 	return 0;
+}
+
+int GpsEnginePollEvent(void)
+{
+    return UBXPacketRead();
 }

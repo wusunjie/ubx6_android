@@ -4,7 +4,17 @@
 
 #include "Engine/GpsEngine.h"
 
+
+static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data);
+static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data);
+
 static GpsCallbacks callbacks;
+
+static struct GpsDataCallbacks cbs = {
+	.rmc_func = NULL,
+	.gga_func = NULL,
+};
+
 static void GpsAdapterThreadEntry(void* arg);
 
 void GpsAdapterInit(GpsCallbacks *cb)
@@ -21,16 +31,32 @@ void GpsAdapterInit(GpsCallbacks *cb)
 	callbacks.set_system_info_cb = cb->set_system_info_cb;
 	callbacks.gnss_sv_status_cb = cb->gnss_sv_status_cb;
 	callbacks.size = sizeof(GpsCallbacks);
-	GpsEngineInit();
+	GpsEngineInit(&cbs);
 }
 
 int GpsAdapterStart(void)
 {
 	callbacks.create_thread_cb("GpsAdapterThreadEntry", GpsAdapterThreadEntry, NULL);
+	return 0;
 }
 
 static void GpsAdapterThreadEntry(void* arg)
 {
+	(void)arg;
+
 	GpsEngineSetup();
-	
+
+	while (1) {
+		GpsEnginePollEvent();
+	}
+}
+
+static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
+{
+	(void)data;
+}
+
+static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data)
+{
+	(void)data;
 }
