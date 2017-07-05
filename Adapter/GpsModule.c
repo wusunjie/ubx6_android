@@ -16,7 +16,7 @@ static hw_module_methods_t merbok_gps_module_method = {
 	.open = merbok_gps_module_open
 };
 
-MERBOK_GPS_API struct hw_module_t HMI = {
+MERBOK_GPS_API struct hw_module_t HAL_MODULE_INFO_SYM = {
 	.tag = HARDWARE_MODULE_TAG,
 	.module_api_version = 0,
 	.hal_api_version = 0,
