@@ -1,5 +1,6 @@
-#include "GPSDeviceIF.h"
-#include "GPSDevice.h"
+#include "Device/GPSDeviceIF.h"
+#include "Device/GPSDevice.h"
+#include "Common/CommonDefs.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,12 +30,12 @@ static struct GPSDeviceBase ComDevice = {
 
 static const char GPSCOM_DEVICE_PATH[] = "/dev/GPSCOM";
 
-extern void GPSComDeviceInit(void)
+MERBOK_GPS_LOCAL void GPSComDeviceInit(void)
 {
 	GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_BLOCK);
 }
 
-extern const struct GPSDeviceIF *GetGPSComDevice(void)
+MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSComDevice(void)
 {
 	return &ComDeviceImp;
 }

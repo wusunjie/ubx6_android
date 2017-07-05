@@ -3,8 +3,8 @@
 
 #include "Engine/GpsEngine.h"
 
-extern void UBXParserInit(struct GpsDataCallbacks *cb);
+extern MERBOK_GPS_LOCAL void UBXParserInit(struct GpsDataCallbacks *cb);
 
-extern int UBXPacketRead(void);
+extern MERBOK_GPS_LOCAL int UBXPacketRead(void);
 
 #endif

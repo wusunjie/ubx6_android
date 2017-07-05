@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "Common/CommonDefs.h"
+
 struct GPS_NMEA_DATE {
     int day;
     int month;
@@ -49,10 +51,10 @@ struct GpsDataCallbacks {
     GpsDataGGACallback gga_func;
 };
 
-extern int GpsEngineInit(struct GpsDataCallbacks *cb);
+extern MERBOK_GPS_LOCAL int GpsEngineInit(struct GpsDataCallbacks *cb);
 
-extern int GpsEngineSetup(void);
+extern MERBOK_GPS_LOCAL int GpsEngineSetup(void);
 
-extern int GpsEnginePollEvent(void);
+extern MERBOK_GPS_LOCAL int GpsEnginePollEvent(void);
 
 #endif

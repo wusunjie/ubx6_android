@@ -3,21 +3,49 @@
 #include <pthread.h>
 
 #include "Engine/GpsEngine.h"
+#include "Common/CommonDefs.h"
 
-
+static void GpsAdapterThreadEntry(void* arg);
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data);
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data);
 
+static int GpsAdapterInit(GpsCallbacks *cb);
+static int GpsAdapterStart(void);
+
 static GpsCallbacks callbacks;
 
-static struct GpsDataCallbacks cbs = {
-	.rmc_func = NULL,
-	.gga_func = NULL,
+static GpsLocation locationInfo = {
+	.size = sizeof(GpsLocation),
+	.flags =
+	GPS_LOCATION_HAS_LAT_LONG | GPS_LOCATION_HAS_ALTITUDE
+	| GPS_LOCATION_HAS_SPEED | GPS_LOCATION_HAS_BEARING |
+	GPS_LOCATION_HAS_ACCURACY,
 };
 
-static void GpsAdapterThreadEntry(void* arg);
+static const GpsInterface GpsInterfaceInst = {
+	.size = sizeof(GpsInterface),
+	.init = GpsAdapterInit,
+	.start = GpsAdapterStart,
+	.stop = NULL,
+	.cleanup = NULL,
+	.inject_time = NULL,
+	.inject_location = NULL,
+	.delete_aiding_data = NULL,
+	.set_position_mode = NULL,
+	.get_extension = NULL
+};
 
-void GpsAdapterInit(GpsCallbacks *cb)
+static struct GpsDataCallbacks cbs = {
+	.rmc_func = GpsDataRMCCB,
+	.gga_func = GpsDataGGACB,
+};
+
+MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void)
+{
+	return &GpsInterfaceInst;
+}
+
+static int GpsAdapterInit(GpsCallbacks *cb)
 {
 	callbacks.location_cb = cb->location_cb;
 	callbacks.status_cb = cb->status_cb;
@@ -32,9 +60,10 @@ void GpsAdapterInit(GpsCallbacks *cb)
 	callbacks.gnss_sv_status_cb = cb->gnss_sv_status_cb;
 	callbacks.size = sizeof(GpsCallbacks);
 	GpsEngineInit(&cbs);
+	return 0;
 }
 
-int GpsAdapterStart(void)
+static int GpsAdapterStart(void)
 {
 	callbacks.create_thread_cb("GpsAdapterThreadEntry", GpsAdapterThreadEntry, NULL);
 	return 0;
@@ -53,10 +82,18 @@ static void GpsAdapterThreadEntry(void* arg)
 
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
 {
-	(void)data;
+	locationInfo.latitude = data->latitude;
+	locationInfo.longitude = data->longitude;
+	locationInfo.speed = data->speed;
+	locationInfo.bearing = data->course;
+	callbacks.location_cb(&locationInfo);
 }
 
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data)
 {
-	(void)data;
+	locationInfo.altitude = data->altitude;
+	locationInfo.accuracy = data->hdop;
+	callbacks.location_cb(&locationInfo);
 }
+
+

@@ -1,4 +1,5 @@
 #include "Device/GPSDevice.h"
+#include "Common/CommonDefs.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -9,15 +10,14 @@ static int GPSDeviceRead(struct GPSDeviceBase *device, void *buffer, size_t len)
 static int GPSDeviceWrite(struct GPSDeviceBase *device, void *buffer, size_t len);
 static int GPSDeviceClose(struct GPSDeviceBase *device);
 
-extern void GPSSNSDeviceInit(void);
-extern void GPSComDeviceInit(void);
+MERBOK_EXTERN_C void GPSComDeviceInit(void);
 
-extern void GPSDeviceInit(void)
+MERBOK_EXTERN_C MERBOK_GPS_LOCAL void GPSDeviceInit(void)
 {
 	GPSComDeviceInit();
 }
 
-extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode)
+MERBOK_EXTERN_C MERBOK_GPS_LOCAL void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode)
 {
 	base->imp.open = GPSDeviceOpen;
 	base->imp.read = GPSDeviceRead;

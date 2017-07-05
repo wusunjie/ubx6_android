@@ -1,6 +1,7 @@
-#include "GPSDeviceIF.h"
+#include "Device/GPSDeviceAPI.h"
 
-#include "GPSDevice.h"
+#include "Device/GpsDevice.h"
+#include "Common/CommonDefs.h"
 
 #include "Pdrd_Def.h"
 
@@ -29,12 +30,12 @@ static struct GPSDeviceBase SNSDevice = {
 
 static const char GPSSNS_DEVICE_PATH[] = "/dev/pdrdctl";
 
-extern void GPSSNSDeviceInit(void)
+MERBOK_GPS_LOCAL void GPSSNSDeviceInit(void)
 {
 	GPSDeviceSetBase(&SNSDevice, GPS_EVENT_MODE_NONBLOCK);
 }
 
-extern const struct GPSDeviceIF *GetGPSSNSDevice(void)
+MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSSNSDevice(void)
 {
 	return &SNSDeviceImp;
 }

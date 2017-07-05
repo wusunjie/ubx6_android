@@ -182,8 +182,6 @@ static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType);
 
 int SetGpsRate(void)
 {
-	int iSendErrCnt = 0;
-
 	UBLOX_CFG_RATE_PAYLOAD Payload;
 	memset(&Payload, 0, sizeof(Payload));
 
@@ -200,8 +198,6 @@ int SetGpsRate(void)
 
 int SetGpsVerion(void)
 {
-	int iSendErrCnt = 0;
-
 	uint8_t pUbloxPacket[FIXLENGTH_NOPAYLOAD] = {0};
 	EncodeToUbloxMessage(TYPE_MON_VER, NULL, pUbloxPacket, 0);
 
@@ -247,8 +243,6 @@ int BookUbxCFGNAVX5(int bBookFlag)
 
 static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType)
 {
-	int iSendErrCnt = 0;
-
 	UBLOX_CFG_RST_PAYLOAD Payload;
 	memset(&Payload, 0, sizeof(Payload));
 
@@ -264,8 +258,6 @@ static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType)
 
 static int WriteUbxCfgMsg(struct UBXMsgType sMsgType, uint8_t rate)
 {
-	int iSendErrCnt = 0;
-
 	UBLOX_CFG_MSG_PAYLOAD Payload;
 	memset(&Payload, 0, sizeof(Payload));
 
@@ -282,8 +274,6 @@ static int WriteUbxCfgMsg(struct UBXMsgType sMsgType, uint8_t rate)
 
 static int WriteUbxPollCFGNAVX5(void)
 {
-	int iSendErrCnt = 0;
-
 	uint8_t pUbloxPacket[FIXLENGTH_NOPAYLOAD] = {0};
 
 	EncodeToUbloxMessage(TYPE_CFG_NAVX5, NULL, pUbloxPacket, 0);
@@ -293,8 +283,6 @@ static int WriteUbxPollCFGNAVX5(void)
 
 static int WriteUbxSendCFGNAVX5(uint16_t wkn)
 {
-	int iSendErrCnt = 0;
-
 	UBLOX_CFG_NAVX5_PAYLOAD Payload;
 	memset(&Payload, 0, sizeof(Payload));
 

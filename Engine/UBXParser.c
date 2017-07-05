@@ -1,3 +1,5 @@
+#include "Engine/UBXParser.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -28,10 +30,17 @@ struct UBXPacketHeader {
 	uint8_t payload_check[0];
 };
 
+static struct GpsDataCallbacks *cbs = NULL;
+
 static int IsUBXPacketValid(struct UBXPacketHeader *header);
 static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
 static int ReadNMEAString(void);
+
+void UBXParserInit(struct GpsDataCallbacks *cb)
+{
+	cbs = cb;
+}
 
 int UBXPacketRead(void)
 {

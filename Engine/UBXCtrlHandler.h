@@ -3,16 +3,18 @@
 
 #include <stdint.h>
 
-extern int SetGpsRate(void);
+#include "Common/CommonDefs.h"
 
-extern int SetGpsVerion(void);
+extern MERBOK_GPS_LOCAL int SetGpsRate(void);
 
-extern int GpsNmeaSetting(int gstFlag);
+extern MERBOK_GPS_LOCAL int SetGpsVerion(void);
 
-extern int ResetGpsReceiver(uint16_t type);
+extern MERBOK_GPS_LOCAL int GpsNmeaSetting(int gstFlag);
 
-extern int BookUbxNAVTIMEUTC(int bBookFlag);
+extern MERBOK_GPS_LOCAL int ResetGpsReceiver(uint16_t type);
 
-extern int BookUbxCFGNAVX5(int bBookFlag);
+extern MERBOK_GPS_LOCAL int BookUbxNAVTIMEUTC(int bBookFlag);
+
+extern MERBOK_GPS_LOCAL int BookUbxCFGNAVX5(int bBookFlag);
 
 #endif
