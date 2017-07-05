@@ -26,7 +26,7 @@
   #ifdef MERBOK_GPS_DLL_EXPORTS // defined if we are building the MERBOK_GPS DLL (instead of using it)
     #define MERBOK_GPS_API MERBOK_GPS_HELPER_DLL_EXPORT
   #else
-    #define MERBOK_GPS_API FOX_HELPER_DLL_IMPORT
+    #define MERBOK_GPS_API MERBOK_GPS_HELPER_DLL_IMPORT
   #endif // MERBOK_GPS_DLL_EXPORTS
   #define MERBOK_GPS_LOCAL MERBOK_GPS_HELPER_DLL_LOCAL
 #else // MERBOK_GPS_DLL is not defined: this means MERBOK_GPS is a static lib.
