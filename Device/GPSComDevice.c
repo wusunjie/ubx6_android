@@ -28,7 +28,7 @@ static struct GPSDeviceBase ComDevice = {
 	.fd = -1
 };
 
-static const char GPSCOM_DEVICE_PATH[] = "/dev/GPSCOM";
+static const char GPSCOM_DEVICE_PATH[] = "/dev/ttymxc1";
 
 MERBOK_GPS_LOCAL void GPSComDeviceInit(void)
 {
