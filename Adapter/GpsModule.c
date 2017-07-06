@@ -50,11 +50,11 @@ static int merbok_gps_module_open(const struct hw_module_t* module, const char* 
 static const GpsInterface *merbok_gps_get_interface(struct gps_device_t* dev)
 {
     (void)dev;
-	return GetGpsInterfaceInst();
+    return GetGpsInterfaceInst();
 }
 
 static int merbok_gps_device_close(struct hw_device_t* device)
 {
-	free(device);
+    free(device);
     return 0;
 }
