@@ -6,13 +6,13 @@
 #include "Common/CommonDefs.h"
 
 enum GPSEventMode {
-	GPS_EVENT_MODE_BLOCK    = 0,
-	GPS_EVENT_MODE_NONBLOCK = 1,
+    GPS_EVENT_MODE_BLOCK    = 0,
+    GPS_EVENT_MODE_NONBLOCK = 1,
 };
 
 struct GPSEvent {
-	int fd;
-	enum GPSEventMode mode;
+    int fd;
+    enum GPSEventMode mode;
 };
 
 extern MERBOK_GPS_LOCAL void GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode);

@@ -19,7 +19,7 @@ struct GPS_NMEA_TIME {
 };
 
 struct GPS_NMEA_RMC_DATA {
-	struct GPS_NMEA_TIME time;
+    struct GPS_NMEA_TIME time;
     bool valid;
     float latitude;
     float longitude;
@@ -30,7 +30,7 @@ struct GPS_NMEA_RMC_DATA {
 };
 
 struct GPS_NMEA_GGA_DATA {
-	struct GPS_NMEA_TIME time;
+    struct GPS_NMEA_TIME time;
     float latitude;
     float longitude;
     int fix_quality;

@@ -11,8 +11,8 @@
 
 void GPSEventInit(struct GPSEvent *event, int fd, enum GPSEventMode mode)
 {
-	event->fd = fd;
-	event->mode = mode;
+    event->fd = fd;
+    event->mode = mode;
 }
 
 int GPSEventRead(struct GPSEvent *event, void *buffer, size_t len)

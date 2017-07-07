@@ -6,10 +6,10 @@
 #include "Common/CommonDefs.h"
 
 struct GPSDeviceIF {
-	int (*open)(void);
-	int (*read)(void *buffer, size_t len);
-	int (*write)(void *buffer, size_t len);
-	int (*close)(void);
+    int (*open)(void);
+    int (*read)(void *buffer, size_t len);
+    int (*write)(void *buffer, size_t len);
+    int (*close)(void);
 };
 
 extern MERBOK_GPS_LOCAL void GPSDeviceInit(void);

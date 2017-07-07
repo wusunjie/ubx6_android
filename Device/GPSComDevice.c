@@ -18,72 +18,72 @@ static int GPSComWrite(void *buffer, size_t len);
 static int GPSComClose(void);
 
 static const struct GPSDeviceIF ComDeviceImp = {
-	.open = GPSComOpen,
-	.read = GPSComRead,
-	.write = GPSComWrite,
-	.close = GPSComClose
+    .open = GPSComOpen,
+    .read = GPSComRead,
+    .write = GPSComWrite,
+    .close = GPSComClose
 };
 
 static struct GPSDeviceBase ComDevice = {
-	.fd = -1
+    .fd = -1
 };
 
 static const char GPSCOM_DEVICE_PATH[] = "/dev/ttymxc1";
 
 MERBOK_GPS_LOCAL void GPSComDeviceInit(void)
 {
-	GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_BLOCK);
+    GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_BLOCK);
 }
 
 MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSComDevice(void)
 {
-	return &ComDeviceImp;
+    return &ComDeviceImp;
 }
 
 static int GPSComOpen(void)
 {
-	int fd = open(GPSCOM_DEVICE_PATH, O_RDWR);
-	if (-1 == fd) {
-		return -1;
-	}
+    int fd = open(GPSCOM_DEVICE_PATH, O_RDWR);
+    if (-1 == fd) {
+        return -1;
+    }
 
-	//set com attribute if open success
-	struct termios attr;
-	memset(&attr, 0, sizeof(attr));
+    //set com attribute if open success
+    struct termios attr;
+    memset(&attr, 0, sizeof(attr));
 
-	//set contro/input/output/local flags
-	attr.c_cflag |=CLOCAL | CREAD;
-	attr.c_cflag &= ~PARENB;
-	attr.c_iflag &= ~IXON;
-	attr.c_iflag &= ~INPCK;
-	attr.c_cflag &= ~CSTOPB;
-	attr.c_cflag &= ~CSIZE;
-	attr.c_cflag |= CS8;
-	attr.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-	attr.c_oflag &= ~OPOST;
-	attr.c_cc[VTIME] = 0;
-	attr.c_cc[VMIN] = 1;
+    //set contro/input/output/local flags
+    attr.c_cflag |=CLOCAL | CREAD;
+    attr.c_cflag &= ~PARENB;
+    attr.c_iflag &= ~IXON;
+    attr.c_iflag &= ~INPCK;
+    attr.c_cflag &= ~CSTOPB;
+    attr.c_cflag &= ~CSIZE;
+    attr.c_cflag |= CS8;
+    attr.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    attr.c_oflag &= ~OPOST;
+    attr.c_cc[VTIME] = 0;
+    attr.c_cc[VMIN] = 1;
 
-	cfsetispeed(&attr, 9600);
-	cfsetospeed(&attr, 9600);
-	tcsetattr(fd, TCSANOW, &attr);
+    cfsetispeed(&attr, 9600);
+    cfsetospeed(&attr, 9600);
+    tcsetattr(fd, TCSANOW, &attr);
 
-	tcflush(fd, TCIOFLUSH);
+    tcflush(fd, TCIOFLUSH);
 
-	return ComDevice.imp.open(&ComDevice, fd);
+    return ComDevice.imp.open(&ComDevice, fd);
 }
 
 static int GPSComRead(void *buffer, size_t len)
 {
-	return ComDevice.imp.read(&ComDevice, buffer, len);
+    return ComDevice.imp.read(&ComDevice, buffer, len);
 }
 
 static int GPSComWrite(void *buffer, size_t len)
 {
-	return ComDevice.imp.write(&ComDevice, buffer, len);
+    return ComDevice.imp.write(&ComDevice, buffer, len);
 }
 
 static int GPSComClose(void)
 {
-	return ComDevice.imp.close(&ComDevice);
+    return ComDevice.imp.close(&ComDevice);
 }

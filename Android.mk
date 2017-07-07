@@ -3,21 +3,21 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 DEVICE_SRC_FILES := \
-	Device/GPSComDevice.c \
-	Device/GPSDevice.c
+    Device/GPSComDevice.c \
+    Device/GPSDevice.c
 
 COMMON_SRC_FILES := \
-	Common/GPSEvent.c
+    Common/GPSEvent.c
 
 ENGINE_SRC_FILES := \
-	Engine/UBXCtrlHandler.c \
-	Engine/UBXParser.c \
-	Engine/GpsEngine.c \
-	Engine/minmea.c
+    Engine/UBXCtrlHandler.c \
+    Engine/UBXParser.c \
+    Engine/GpsEngine.c \
+    Engine/minmea.c
 
 ADAPTER_SRC_FILE := \
-	Adapter/GpsAdapter.c \
-	Adapter/GpsModule.c
+    Adapter/GpsAdapter.c \
+    Adapter/GpsModule.c
 
 
 LOCAL_MODULE := gps.default
