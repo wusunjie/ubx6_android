@@ -26,11 +26,12 @@ MERBOK_GPS_API struct hw_module_t HAL_MODULE_INFO_SYM = {
 	.methods = &merbok_gps_module_method,
 };
 
-static int merbok_gps_module_open(const struct hw_module_t* module, const char* id,
-            struct hw_device_t** device)
+static int merbok_gps_module_open(const struct hw_module_t *module, const char *id,
+            struct hw_device_t **device)
 {
     (void)id;
-	struct gps_device_t *dev = (struct gps_device_t *)malloc(sizeof(*dev));
+
+    struct gps_device_t *dev = (struct gps_device_t *)malloc(sizeof(*dev));
 
     if(dev == NULL)
         return -1;
@@ -50,6 +51,7 @@ static int merbok_gps_module_open(const struct hw_module_t* module, const char* 
 static const GpsInterface *merbok_gps_get_interface(struct gps_device_t* dev)
 {
     (void)dev;
+
     return GetGpsInterfaceInst();
 }
 
