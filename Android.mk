@@ -19,7 +19,6 @@ ENGINE_SRC_FILES := \
 ADAPTER_SRC_FILE := \
     Adapter/GpsAdapter.cpp \
     Adapter/GpsModule.c
-    
 
 
 LOCAL_MODULE := gps.default

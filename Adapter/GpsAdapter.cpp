@@ -2,6 +2,8 @@
 
 #include <new>
 
+#include <string.h>
+
 #include "Engine/GpsEngine.h"
 
 #include "Common/CommonDefs.h"
@@ -118,6 +120,16 @@ static int GpsAdapterInit(GpsCallbacks *cb)
         .year_of_hw = 2017
     };
 
+    memset(&locationInfo, 0, sizeof(GpsLocation));
+    locationInfo = {
+        .size = sizeof(GpsLocation),
+        .flags =
+        GPS_LOCATION_HAS_LAT_LONG | GPS_LOCATION_HAS_ALTITUDE
+        | GPS_LOCATION_HAS_SPEED | GPS_LOCATION_HAS_BEARING |
+        GPS_LOCATION_HAS_ACCURACY,
+    };
+    memset(&context, 0, sizeof(AdapterThreadCtx));
+
     callbacks.location_cb = cb->location_cb;
     callbacks.status_cb = cb->status_cb;
     callbacks.sv_status_cb = cb->sv_status_cb;
@@ -136,13 +148,14 @@ static int GpsAdapterInit(GpsCallbacks *cb)
     GpsEngineInit(&cbs);
     callbacks.set_system_info_cb(&sysInfo);
     callbacks.set_capabilities_cb(GPS_CAPABILITY_SCHEDULING | GPS_CAPABILITY_SINGLE_SHOT);
+
     return 0;
 }
 
 static int GpsAdapterStart(void)
 {
-    context.running = 1;
     GPSLOGD("GpsAdapterStart");
+    context.running = 1;
     callbacks.create_thread_cb("GpsAdapterThreadEntry", GpsAdapterThreadEntry, NULL);
     return 0;
 }
@@ -209,14 +222,14 @@ static int GpsAdapterInjectLocation(double latitude, double longitude, float acc
 
 static void GpsAdapterDeleteAidingData(GpsAidingData flags)
 {
-    GPSLOGD("GpsAdapterDeleteAidingData");
+    GPSLOGD("GpsAdapterDeleteAidingData: flags 0x%x", flags);
     (void)flags;
 }
 
 static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence recurrence,
     uint32_t min_interval, uint32_t preferred_accuracy, uint32_t preferred_time)
 {
-    GPSLOGD("GpsAdapterSetPositionMode");
+    GPSLOGD("GpsAdapterSetPositionMode: mode %d", mode);
     (void)mode;
     (void)recurrence;
     (void)min_interval;
@@ -227,14 +240,15 @@ static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence
 
 static const void *GpsAdapterGetExtension(const char *name)
 {
-    GPSLOGD("GpsAdapterGetExtension");
+    GPSLOGD("GpsAdapterGetExtension: %s", name);
     (void)name;
     return NULL;
 }
 
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
 {
-    GPSLOGD("GpsDataRMCCB");
+    GPSLOGD("GpsDataRMCCB:latitude %f, longitude %f, speed %f, bearing %f",
+        data->latitude, data->longitude, data->speed, data->course);
     locationInfo.latitude = data->latitude;
     locationInfo.longitude = data->longitude;
     locationInfo.speed = data->speed;
@@ -244,7 +258,7 @@ static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
 
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data)
 {
-    GPSLOGD("GpsDataGGACB");
+    GPSLOGD("GpsDataGGACB:altitude %f, accuracy %f", data->altitude, data->hdop);
     locationInfo.altitude = data->altitude;
     locationInfo.accuracy = data->hdop;
     callbacks.location_cb(&locationInfo);
