@@ -6,7 +6,7 @@
 #include "Common/CommonDefs.h"
 #include "Common/GPSLog.h"
 
-MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void);
+MERBOK_GPS_LOCAL const GpsInterface *GetGpsInterfaceInst(void);
 
 static int merbok_gps_module_open(const struct hw_module_t* module, const char* id,
             struct hw_device_t** device);

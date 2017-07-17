@@ -25,13 +25,7 @@ static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence
     uint32_t min_interval, uint32_t preferred_accuracy, uint32_t preferred_time);
 static const void *GpsAdapterGetExtension(const char* name);
 
-static GpsLocation locationInfo = {
-    .size = sizeof(GpsLocation),
-    .flags =
-    GPS_LOCATION_HAS_LAT_LONG | GPS_LOCATION_HAS_ALTITUDE
-    | GPS_LOCATION_HAS_SPEED | GPS_LOCATION_HAS_BEARING |
-    GPS_LOCATION_HAS_ACCURACY,
-};
+static GpsLocation locationInfo;
 
 static const GpsInterface GpsInterfaceInst = {
     .size = sizeof(GpsInterface),
@@ -45,6 +39,15 @@ static const GpsInterface GpsInterfaceInst = {
     .set_position_mode = GpsAdapterSetPositionMode,
     .get_extension = GpsAdapterGetExtension
 };
+
+MERBOK_EXTERN_C_BEGIN
+
+MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void)
+{
+    return &GpsInterfaceInst;
+}
+
+MERBOK_EXTERN_C_END
 
 static GpsCallbacks callbacks;
 
@@ -103,15 +106,6 @@ public:
         callbacks.location_cb(context);
     }
 };
-
-MERBOK_EXTERN_C_BEGIN
-
-MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void)
-{
-    return &GpsInterfaceInst;
-}
-
-MERBOK_EXTERN_C_END
 
 static int GpsAdapterInit(GpsCallbacks *cb)
 {
