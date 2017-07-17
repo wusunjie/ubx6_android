@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>
 
 
-extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
+extern void GPSDeviceSetBase(struct GPSDeviceBase *base);
 
 static int GPSSNSOpen(void);
 static int GPSSNSRead(void *buffer, size_t len);
@@ -32,7 +32,7 @@ static const char GPSSNS_DEVICE_PATH[] = "/dev/pdrdctl";
 
 MERBOK_GPS_LOCAL void GPSSNSDeviceInit(void)
 {
-    GPSDeviceSetBase(&SNSDevice, GPS_EVENT_MODE_NONBLOCK);
+    GPSDeviceSetBase(&SNSDevice);
 }
 
 MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSSNSDevice(void)

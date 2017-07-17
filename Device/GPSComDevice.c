@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 
-extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
+extern void GPSDeviceSetBase(struct GPSDeviceBase *base);
 
 static int GPSComOpen(void);
 static int GPSComRead(void *buffer, size_t len);
@@ -34,7 +34,7 @@ static const char GPSCOM_DEVICE_PATH[] = "/dev/ttymxc1";
 
 MERBOK_GPS_LOCAL void GPSComDeviceInit(void)
 {
-    GPSDeviceSetBase(&ComDevice, GPS_EVENT_MODE_BLOCK);
+    GPSDeviceSetBase(&ComDevice);
 }
 
 MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSComDevice(void)
@@ -44,7 +44,7 @@ MERBOK_GPS_LOCAL const struct GPSDeviceIF *GetGPSComDevice(void)
 
 static int GPSComOpen(void)
 {
-    int fd = open(GPSCOM_DEVICE_PATH, O_RDWR);
+    int fd = open(GPSCOM_DEVICE_PATH, O_RDWR | O_NOCTTY);
     if (-1 == fd) {
         GPSLOGD("Can't Open Serial Port");
         return -1;
@@ -69,8 +69,8 @@ static int GPSComOpen(void)
     attr.c_cflag |= CS8;
     attr.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
     attr.c_oflag &= ~OPOST;
-    attr.c_cc[VTIME] = 0;
-    attr.c_cc[VMIN] = 1;
+    attr.c_cc[VTIME] = 5;
+    attr.c_cc[VMIN] = 0;
 
     cfsetispeed(&attr, 9600);
     cfsetospeed(&attr, 9600);

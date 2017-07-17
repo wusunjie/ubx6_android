@@ -15,8 +15,6 @@ struct GPSDeviceImp {
 };
 
 struct GPSDeviceBase {
-    struct GPSEvent event;
-    enum GPSEventMode mode;
     struct GPSDeviceImp imp;
     int fd;
 };

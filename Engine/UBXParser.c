@@ -107,7 +107,7 @@ static int CheckUBXPacket(struct UBXPacketHeader *header)
 
 static int UBXPacketParse(struct UBXPacketHeader *header)
 {
-    GPSLOGD("UBXPacketParse");
+    GPSLOGD("UBXPacketParse:class 0x%x, id 0x%x", header->ubx_class, header->id);
     switch (header->ubx_class) {
         case UBX_CLASS_ID_ACK:
         {
