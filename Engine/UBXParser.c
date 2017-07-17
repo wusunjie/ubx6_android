@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "Engine/minmea.h"
 
 #include "Device/GPSDeviceIF.h"
+
+#include "Common/GPSLog.h"
 
 enum UBXClassID {
     UBX_CLASS_ID_NAV = 0x01,
@@ -28,9 +31,7 @@ struct UBXPacketHeader {
     uint8_t id;
     uint16_t length;
     uint8_t payload_check[0];
-} __attribute__((packed));
-
-static struct GpsDataCallbacks *cbs = NULL;
+} __attribute__ ((packed));
 
 static struct GpsDataCallbacks *cbs = NULL;
 
@@ -72,6 +73,7 @@ int UBXPacketRead(void)
 
 static int IsUBXPacketValid(struct UBXPacketHeader *header)
 {
+    GPSLOGD("IsUBXPacketValid");
     if (0xB5 != header->sync_char[0]) {
         return -1;
     }
@@ -84,6 +86,7 @@ static int IsUBXPacketValid(struct UBXPacketHeader *header)
 
 static int CheckUBXPacket(struct UBXPacketHeader *header)
 {
+    GPSLOGD("CheckUBXPacket");
     uint8_t check_a = 0, check_b = 0;
     size_t i;
     uint8_t *buffer = &(header->ubx_class);
@@ -104,6 +107,7 @@ static int CheckUBXPacket(struct UBXPacketHeader *header)
 
 static int UBXPacketParse(struct UBXPacketHeader *header)
 {
+    GPSLOGD("UBXPacketParse");
     switch (header->ubx_class) {
         case UBX_CLASS_ID_ACK:
         {
@@ -155,6 +159,7 @@ static int ReadNMEAString(void)
                     switch (type) {
                         case MINMEA_SENTENCE_RMC:
                         {
+                            GPSLOGD("ReadNMEAString:MINMEA_SENTENCE_RMC");
                             struct minmea_sentence_rmc frame;
                             if (minmea_parse_rmc(&frame, strBuffer)) {
                                 struct GPS_NMEA_RMC_DATA data;
@@ -176,6 +181,7 @@ static int ReadNMEAString(void)
                         break;
                         case MINMEA_SENTENCE_GGA:
                         {
+                            GPSLOGD("ReadNMEAString:MINMEA_SENTENCE_GGA");
                             struct minmea_sentence_gga frame;
                             if (minmea_parse_gga(&frame, strBuffer)) {
                                 struct GPS_NMEA_GGA_DATA data;

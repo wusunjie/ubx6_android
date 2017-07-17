@@ -3,9 +3,7 @@
 
 #include "Common/CommonDefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+MERBOK_EXTERN_C_BEGIN
 
 #include <stdio.h>
 #include <stdint.h>
@@ -234,9 +232,7 @@ static inline float minmea_tocoord(struct minmea_float *f)
     return (float) degrees + (float) minutes / (60 * f->scale);
 }
 
-#ifdef __cplusplus
-}
-#endif
+MERBOK_EXTERN_C_END
 
 #endif /* MINMEA_H */
 

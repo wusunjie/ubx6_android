@@ -5,6 +5,8 @@
 
 #include "Common/CommonDefs.h"
 
+MERBOK_EXTERN_C_BEGIN
+
 struct GPS_NMEA_DATE {
     int day;
     int month;
@@ -56,5 +58,7 @@ extern MERBOK_GPS_LOCAL int GpsEngineInit(struct GpsDataCallbacks *cb);
 extern MERBOK_GPS_LOCAL int GpsEngineSetup(void);
 
 extern MERBOK_GPS_LOCAL int GpsEnginePollEvent(void);
+
+MERBOK_EXTERN_C_END
 
 #endif

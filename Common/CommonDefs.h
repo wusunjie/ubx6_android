@@ -35,10 +35,11 @@
 #endif // MERBOK_GPS_DLL
 
 #ifdef __cplusplus
-  #define MERBOK_EXTERN_C extern "C"
+  #define MERBOK_EXTERN_C_BEGIN extern "C" {
+  #define MERBOK_EXTERN_C_END }
   #else
-  #define MERBOK_EXTERN_C
+  #define MERBOK_EXTERN_C_BEGIN
+  #define MERBOK_EXTERN_C_END
 #endif
-
 
 #endif

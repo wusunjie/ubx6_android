@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "Common/CommonDefs.h"
+#include "Common/GPSLog.h"
 
 MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void);
 
@@ -29,6 +30,7 @@ MERBOK_GPS_API struct hw_module_t HAL_MODULE_INFO_SYM = {
 static int merbok_gps_module_open(const struct hw_module_t *module, const char *id,
             struct hw_device_t **device)
 {
+    GPSLOGD("merbok_gps_module_open");
     (void)id;
 
     struct gps_device_t *dev = (struct gps_device_t *)malloc(sizeof(*dev));
@@ -50,6 +52,7 @@ static int merbok_gps_module_open(const struct hw_module_t *module, const char *
 
 static const GpsInterface *merbok_gps_get_interface(struct gps_device_t* dev)
 {
+    GPSLOGD("merbok_gps_get_interface");
     (void)dev;
 
     return GetGpsInterfaceInst();
@@ -57,6 +60,7 @@ static const GpsInterface *merbok_gps_get_interface(struct gps_device_t* dev)
 
 static int merbok_gps_device_close(struct hw_device_t* device)
 {
+    GPSLOGD("merbok_gps_device_close");
     free(device);
     return 0;
 }

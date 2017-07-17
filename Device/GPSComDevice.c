@@ -1,6 +1,7 @@
 #include "Device/GPSDeviceIF.h"
 #include "Device/GPSDevice.h"
 #include "Common/CommonDefs.h"
+#include "Common/GPSLog.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -9,6 +10,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 extern void GPSDeviceSetBase(struct GPSDeviceBase *base, enum GPSEventMode mode);
 
@@ -44,6 +46,12 @@ static int GPSComOpen(void)
 {
     int fd = open(GPSCOM_DEVICE_PATH, O_RDWR);
     if (-1 == fd) {
+        GPSLOGD("Can't Open Serial Port");
+        return -1;
+    }
+
+    if(fcntl(fd, F_SETFL, 0) < 0) {
+        GPSLOGD("fcntl failed!\n");
         return -1;
     }
 
@@ -52,7 +60,7 @@ static int GPSComOpen(void)
     memset(&attr, 0, sizeof(attr));
 
     //set contro/input/output/local flags
-    attr.c_cflag |=CLOCAL | CREAD;
+    attr.c_cflag |= CLOCAL | CREAD;
     attr.c_cflag &= ~PARENB;
     attr.c_iflag &= ~IXON;
     attr.c_iflag &= ~INPCK;

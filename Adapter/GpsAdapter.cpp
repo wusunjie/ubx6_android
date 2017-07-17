@@ -1,9 +1,12 @@
 #include <hardware/gps.h>
 
-#include <pthread.h>
+#include <new>
 
 #include "Engine/GpsEngine.h"
+
 #include "Common/CommonDefs.h"
+#include "Common/MsgQueue.h"
+#include "Common/GPSLog.h"
 
 static void GpsAdapterThreadEntry(void* arg);
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data);
@@ -19,8 +22,6 @@ static void GpsAdapterDeleteAidingData(GpsAidingData flags);
 static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence recurrence,
     uint32_t min_interval, uint32_t preferred_accuracy, uint32_t preferred_time);
 static const void *GpsAdapterGetExtension(const char* name);
-
-static GpsCallbacks callbacks;
 
 static GpsLocation locationInfo = {
     .size = sizeof(GpsLocation),
@@ -43,18 +44,80 @@ static const GpsInterface GpsInterfaceInst = {
     .get_extension = GpsAdapterGetExtension
 };
 
+static GpsCallbacks callbacks;
+
 static struct GpsDataCallbacks cbs = {
     .rmc_func = GpsDataRMCCB,
     .gga_func = GpsDataGGACB,
 };
+
+struct AdapterThreadCtx {
+    int running;
+};
+
+static struct AdapterThreadCtx context;
+
+class MsgHandlerStop: public MsgHandler {
+private:
+    struct AdapterThreadCtx *context;
+    int running;
+public:
+
+    MsgHandlerStop(struct AdapterThreadCtx *ctx, int r)
+    :context(ctx)
+    ,running(r)
+    {
+
+    }
+
+    void proc(void)
+    {
+        context->running = running;
+    }
+};
+
+class MsgHandlerInjectLocation: public MsgHandler {
+private:
+    GpsLocation *context;
+    double latitude;
+    double longitude;
+    float accuracy;
+public:
+
+    MsgHandlerInjectLocation(GpsLocation *ctx, double lati, double longi, float a)
+    :context(ctx)
+    ,latitude(lati)
+    ,longitude(longi)
+    ,accuracy(a)
+    {
+
+    }
+
+    void proc(void)
+    {
+        context->latitude = latitude;
+        context->longitude = longitude;
+        context->accuracy = accuracy;
+        callbacks.location_cb(context);
+    }
+};
+
+MERBOK_EXTERN_C_BEGIN
 
 MERBOK_GPS_LOCAL const GpsInterface* GetGpsInterfaceInst(void)
 {
     return &GpsInterfaceInst;
 }
 
+MERBOK_EXTERN_C_END
+
 static int GpsAdapterInit(GpsCallbacks *cb)
 {
+    GnssSystemInfo sysInfo = {
+        .size = sizeof(GnssSystemInfo),
+        .year_of_hw = 2017
+    };
+
     callbacks.location_cb = cb->location_cb;
     callbacks.status_cb = cb->status_cb;
     callbacks.sv_status_cb = cb->sv_status_cb;
@@ -67,12 +130,19 @@ static int GpsAdapterInit(GpsCallbacks *cb)
     callbacks.set_system_info_cb = cb->set_system_info_cb;
     callbacks.gnss_sv_status_cb = cb->gnss_sv_status_cb;
     callbacks.size = sizeof(GpsCallbacks);
+    callbacks.acquire_wakelock_cb();
+    MsgQueueFlush();
+    callbacks.release_wakelock_cb();
     GpsEngineInit(&cbs);
+    callbacks.set_system_info_cb(&sysInfo);
+    callbacks.set_capabilities_cb(GPS_CAPABILITY_SCHEDULING | GPS_CAPABILITY_SINGLE_SHOT);
     return 0;
 }
 
 static int GpsAdapterStart(void)
 {
+    context.running = 1;
+    GPSLOGD("GpsAdapterStart");
     callbacks.create_thread_cb("GpsAdapterThreadEntry", GpsAdapterThreadEntry, NULL);
     return 0;
 }
@@ -80,25 +150,44 @@ static int GpsAdapterStart(void)
 static void GpsAdapterThreadEntry(void *arg)
 {
     (void)arg;
+    GPSLOGD("GpsAdapterThreadEntry");
     GpsEngineSetup();
 
-    while (1) {
+    while (context.running) {
+        MsgHandler *handler = NULL;
+        callbacks.acquire_wakelock_cb();
+        while ((handler = MsgQueueRecv())) {
+            callbacks.release_wakelock_cb();
+            handler->proc();
+            delete handler;
+            callbacks.acquire_wakelock_cb();
+        }
+        callbacks.release_wakelock_cb();
         GpsEnginePollEvent();
     }
 }
 
 static int GpsAdapterStop(void)
 {
-    return 0;
+    GPSLOGD("GpsAdapterStop");
+    MsgHandlerStop *stop = new (std::nothrow) MsgHandlerStop(&context, 0);
+    if (stop) {
+        callbacks.acquire_wakelock_cb();
+        MsgQueueSend(stop);
+        callbacks.release_wakelock_cb();
+        return 0;
+    }
+    return -1;
 }
 
 static void GpsAdapterCleanup(void)
 {
-
+    GPSLOGD("GpsAdapterCleanup");
 }
 
 static int GpsAdapterInjectTime(GpsUtcTime time, int64_t timeReference, int uncertainty)
 {
+    GPSLOGD("GpsAdapterInjectTime");
     (void)time;
     (void)timeReference;
     (void)uncertainty;
@@ -107,19 +196,27 @@ static int GpsAdapterInjectTime(GpsUtcTime time, int64_t timeReference, int unce
 
 static int GpsAdapterInjectLocation(double latitude, double longitude, float accuracy)
 {
-    (void)longitude;
-    (void)accuracy;
-    return 0;
+    GPSLOGD("GpsAdapterInjectLocation");
+    MsgHandlerInjectLocation *injectLocation = new (std::nothrow) MsgHandlerInjectLocation(&locationInfo, latitude, longitude, accuracy);
+    if (injectLocation) {
+        callbacks.acquire_wakelock_cb();
+        MsgQueueSend(injectLocation);
+        callbacks.release_wakelock_cb();
+        return 0;
+    }
+    return -1;
 }
 
 static void GpsAdapterDeleteAidingData(GpsAidingData flags)
 {
+    GPSLOGD("GpsAdapterDeleteAidingData");
     (void)flags;
 }
 
 static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence recurrence,
     uint32_t min_interval, uint32_t preferred_accuracy, uint32_t preferred_time)
 {
+    GPSLOGD("GpsAdapterSetPositionMode");
     (void)mode;
     (void)recurrence;
     (void)min_interval;
@@ -130,12 +227,14 @@ static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence
 
 static const void *GpsAdapterGetExtension(const char *name)
 {
+    GPSLOGD("GpsAdapterGetExtension");
     (void)name;
     return NULL;
 }
 
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
 {
+    GPSLOGD("GpsDataRMCCB");
     locationInfo.latitude = data->latitude;
     locationInfo.longitude = data->longitude;
     locationInfo.speed = data->speed;
@@ -145,9 +244,8 @@ static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data)
 
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data)
 {
+    GPSLOGD("GpsDataGGACB");
     locationInfo.altitude = data->altitude;
     locationInfo.accuracy = data->hdop;
     callbacks.location_cb(&locationInfo);
 }
-
-
