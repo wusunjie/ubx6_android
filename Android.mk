@@ -21,6 +21,7 @@ ADAPTER_SRC_FILE := \
     Adapter/GpsAdapter.cpp \
     Adapter/GpsModule.c
 
+LOCAL_MODULE_TAGS := eng
 
 LOCAL_MODULE := gps.default
 LOCAL_MODULE_PATH := $(TARGET_OUT)/system/lib/hw
