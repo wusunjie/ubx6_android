@@ -142,7 +142,7 @@ static int GpsAdapterInit(GpsCallbacks *cb)
 
     msgQueue = MsgQueueCreate();
     mainLoopEvent = GPSEventCreate();
-    
+
     GpsEngineInit(&cbs);
     callbacks.set_system_info_cb(&sysInfo);
     callbacks.set_capabilities_cb(GPS_CAPABILITY_SCHEDULING | GPS_CAPABILITY_SINGLE_SHOT);

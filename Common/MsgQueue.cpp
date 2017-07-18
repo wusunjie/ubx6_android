@@ -32,7 +32,7 @@ MsgHandler *MsgQueueRecv(MsgQueue *q)
             q->pop_front();
         }
     }
-    
+
     return msg;
 }
 
