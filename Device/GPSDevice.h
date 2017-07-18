@@ -1,8 +1,6 @@
 #ifndef _GPS_DEVICE_H
 #define _GPS_DEVICE_H
 
-#include "Common/GPSEvent.h"
-
 #include <stddef.h>
 
 struct GPSDeviceBase;

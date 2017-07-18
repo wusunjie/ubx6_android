@@ -1,14 +1,20 @@
 #ifndef _GPS_EVENT_H
 #define _GPS_EVENT_H
 
-#include <unistd.h>
-
 #include "Common/CommonDefs.h"
 
-extern MERBOK_GPS_LOCAL ssize_t GPSEventRead(int fd, void *buf, size_t count);
+struct GPSEvent;
 
-extern MERBOK_GPS_LOCAL ssize_t GPSEventWrite(int fd, const void *buf, size_t count);
+MERBOK_EXTERN_C_BEGIN
 
-extern MERBOK_GPS_LOCAL int GPSEventClose(int fd);
+extern MERBOK_GPS_LOCAL struct GPSEvent *GPSEventCreate(void);
+
+extern MERBOK_GPS_LOCAL int GPSEventWait(struct GPSEvent *ev);
+
+extern MERBOK_GPS_LOCAL int GPSEventSignal(struct GPSEvent *ev);
+
+extern MERBOK_GPS_LOCAL void GPSEventDestory(struct GPSEvent *ev);
+
+MERBOK_EXTERN_C_END
 
 #endif

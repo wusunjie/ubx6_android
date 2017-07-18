@@ -7,6 +7,7 @@ DEVICE_SRC_FILES := \
     Device/GPSDevice.c
 
 COMMON_SRC_FILES := \
+    Common/GPSSafeIO.c \
     Common/GPSEvent.c \
     Common/MsgQueue.cpp
 

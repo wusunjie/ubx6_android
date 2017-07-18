@@ -1,27 +1,42 @@
 #include "Common/MsgQueue.h"
 
-#include <list>
+#include <new>
 
-static std::list<MsgHandler *> msgQueue;
-
-void MsgQueueFlush(void)
+MsgQueue *MsgQueueCreate(void)
 {
-    msgQueue.clear();
+    return new (std::nothrow) MsgQueue();
 }
 
-void MsgQueueSend(MsgHandler *msg)
+void MsgQueueFlush(MsgQueue *q)
 {
-    msgQueue.push_back(msg);
+    if (q) {
+        q->clear();
+    }
 }
 
-MsgHandler *MsgQueueRecv(void)
+void MsgQueueSend(MsgQueue *q, MsgHandler *msg)
+{
+    if (q) {
+        q->push_back(msg);
+    }
+}
+
+MsgHandler *MsgQueueRecv(MsgQueue *q)
 {
     MsgHandler *msg = NULL;
-    if (!msgQueue.empty()) {
-        msg = msgQueue.front();
+    if (q) {
+        if (!q->empty()) {
+            msg = q->front();
+        }
+        if (msg) {
+            q->pop_front();
+        }
     }
-    if (msg) {
-        msgQueue.pop_front();
-    }
+    
     return msg;
+}
+
+void MsgQueueDestory(MsgQueue *q)
+{
+    delete q;
 }

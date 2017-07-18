@@ -1,30 +1,54 @@
-#include "Common/GPSEvent.h"
+#include <stdlib.h>
 
-#include <errno.h>
+#include <sys/eventfd.h>
 
-ssize_t GPSEventRead(int fd, void *buf, size_t count)
+#include "Common/GPSSafeIO.h"
+
+struct GPSEvent {
+    int fd;
+};
+
+struct GPSEvent *GPSEventCreate(void)
 {
-    ssize_t n;
+    struct GPSEvent *ev = NULL;
+    int fd = eventfd(0, 0);
+    if (-1 != fd) {
+        ev = (struct GPSEvent *)malloc(sizeof(*ev));
+        ev->fd = fd;
+    }
 
-    do {
-        n = read(fd, buf, count);
-    } while(n < 0 && errno == EINTR);
-
-    return n;
+    return ev;
 }
 
-ssize_t GPSEventWrite(int fd, const void *buf, size_t count)
+int GPSEventWait(struct GPSEvent *ev)
 {
-    ssize_t n;
-
-    do {
-        n = write(fd, buf, count);
-    } while(n < 0 && errno == EINTR);
-
-    return n;
+    if (ev) {
+        uint64_t n;
+        GPSSafeRead(ev->fd, &n, 8);
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
-int GPSEventClose(int fd)
+int GPSEventSignal(struct GPSEvent *ev)
 {
-    return close(fd);
+    if (ev) {
+        uint64_t n = 1;
+        GPSSafeWrite(ev->fd, &n, 8);
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
+
+void GPSEventDestory(struct GPSEvent *ev)
+{
+    if (ev) {
+        GPSSafeClose(ev->fd);
+        free(ev);
+    }
+}
+

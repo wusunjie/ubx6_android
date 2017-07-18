@@ -1,16 +1,26 @@
 #ifndef _MSG_QUEUE_H
 #define _MSG_QUEUE_H
 
+#include <list>
+
+#include "Common/CommonDefs.h"
+
 class MsgHandler {
 public:
     virtual void proc(void) = 0;
     virtual ~MsgHandler(void) {}
 };
 
-extern void MsgQueueFlush(void);
+typedef std::list<MsgHandler *> MsgQueue;
 
-extern void MsgQueueSend(MsgHandler *msg);
+extern MERBOK_GPS_LOCAL MsgQueue *MsgQueueCreate(void);
 
-extern MsgHandler *MsgQueueRecv(void);
+extern MERBOK_GPS_LOCAL void MsgQueueFlush(MsgQueue *q);
+
+extern MERBOK_GPS_LOCAL void MsgQueueSend(MsgQueue *q, MsgHandler *msg);
+
+extern MERBOK_GPS_LOCAL MsgHandler *MsgQueueRecv(MsgQueue *q);
+
+extern MERBOK_GPS_LOCAL void MsgQueueDestory(MsgQueue *q);
 
 #endif

@@ -1,5 +1,6 @@
 #include "Device/GPSDevice.h"
 #include "Common/CommonDefs.h"
+#include "Common/GPSSafeIO.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -38,7 +39,7 @@ static int GPSDeviceRead(struct GPSDeviceBase *device, void *buffer, size_t len)
         return -1;
     }
     
-    return GPSEventRead(device->fd, buffer, len);
+    return GPSSafeRead(device->fd, buffer, len);
 }
 
 static int GPSDeviceWrite(struct GPSDeviceBase *device, void *buffer, size_t len)
@@ -47,7 +48,7 @@ static int GPSDeviceWrite(struct GPSDeviceBase *device, void *buffer, size_t len
         return -1;
     }
     
-    return GPSEventWrite(device->fd, buffer, len);
+    return GPSSafeWrite(device->fd, buffer, len);
 }
 
 static int GPSDeviceClose(struct GPSDeviceBase *device)
@@ -58,7 +59,7 @@ static int GPSDeviceClose(struct GPSDeviceBase *device)
         return 0;
     }
 
-    ret = GPSEventClose(device->fd);
+    ret = GPSSafeClose(device->fd);
     device->fd = -1;
     return ret;
 }
