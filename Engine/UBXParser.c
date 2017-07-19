@@ -115,7 +115,62 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
             {
                 case 0x01:
                 {
+                    int numCh = header->payload_check[4];
+                    int i;
+                    struct GPS_SV_INFO *svinfos = (struct GPS_SV_INFO *)malloc(numCh * sizeof(*svinfos));
+                    for (i = 0; i < numCh; i++) {
+                        GPSLOGD("chn: %d, svid: %d, cno: %d, elev: %d",
+                            header->payload_check[8 + 12 * i],
+                            header->payload_check[9 + 12 * i],
+                            header->payload_check[12 + 12 * i],
+                            header->payload_check[14 + 12 * i]);
 
+                        svinfos[i].chn = header->payload_check[8 + 12 * i];
+                        svinfos[i].svid = header->payload_check[9 + 12 * i];
+                        svinfos[i].flags = header->payload_check[10 + 12 * i];
+                        svinfos[i].cno = header->payload_check[12 + 12 * i];
+                        svinfos[i].elev = header->payload_check[13 + 12 * i];
+                        svinfos[i].azim = ((int16_t)(header->payload_check[14 + 12 * i]) << 8) |
+                        header->payload_check[15 + 12 * i];
+                    }
+
+                    cbs->svinfo_func(numCh, svinfos);
+
+                    free(svinfos);
+                }
+                break;
+                default:
+                break;
+            }
+        }
+        break;
+        case UBX_CLASS_ID_MON:
+        {
+            switch (header->id) {
+                case 0x04:
+                {
+                    GPSLOGD("swVersion: %s, hwVersion: %s, romVersion: %s",
+                        (char *)(header->payload_check),
+                        (char *)(header->payload_check + 30),
+                        (char *)(header->payload_check + 40));
+                }
+                break;
+                default:
+                break;
+            }
+        }
+        break;
+        case UBX_CLASS_ID_NAV:
+        {
+            switch (header->id) {
+                case 0x21:
+                {
+                    GPSLOGD("year: %d, month: %d, day: %d",
+                        ((uint16_t)(header->payload_check[12]) << 8) | header->payload_check[13],
+                        header->payload_check[14], header->payload_check[15]);
+
+                    /* TODO: decode and transfer to utc time */
+                    cbs->time_func(0);
                 }
                 break;
                 default:
@@ -156,6 +211,9 @@ static int ReadNMEAString(void)
                     if (MINMEA_INVALID == type) {
                         return -1;
                     }
+
+                    cbs->nmea_func(strBuffer, strlen(strBuffer));
+
                     switch (type) {
                         case MINMEA_SENTENCE_RMC:
                         {

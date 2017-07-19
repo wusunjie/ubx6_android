@@ -2,6 +2,7 @@
 #define _GPS_ENGINE_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "Common/CommonDefs.h"
 
@@ -45,12 +46,27 @@ struct GPS_NMEA_GGA_DATA {
     int dgps_age;
 };
 
+struct GPS_SV_INFO {
+    uint8_t chn;
+    uint8_t svid;
+    int8_t flags;
+    uint8_t cno;
+    int8_t elev;
+    int16_t azim;
+};
+
 typedef void (*GpsDataRMCCallback)(struct GPS_NMEA_RMC_DATA *data);
 typedef void (*GpsDataGGACallback)(struct GPS_NMEA_GGA_DATA *data);
+typedef void (*GpsDataUTCTimeCallback)(uint64_t utc);
+typedef void (*GpsDataSVInfoCallback)(int num, struct GPS_SV_INFO *infos);
+typedef void (*GpsDataNMEACallback)(char *nmea, int length);
 
 struct GpsDataCallbacks {
     GpsDataRMCCallback rmc_func;
     GpsDataGGACallback gga_func;
+    GpsDataUTCTimeCallback time_func;
+    GpsDataSVInfoCallback svinfo_func;
+    GpsDataNMEACallback nmea_func;
 };
 
 extern MERBOK_GPS_LOCAL int GpsEngineInit(struct GpsDataCallbacks *cb);

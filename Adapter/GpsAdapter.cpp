@@ -14,6 +14,9 @@
 static void GpsAdapterThreadEntry(void* arg);
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data);
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data);
+static void GpsDataUTCTimeCB(uint64_t utc);
+static void GpsDataSVInfoCB(int num, struct GPS_SV_INFO *infos);
+static void GpsDataNMEACB(char *nmea, int length);
 
 static int GpsAdapterInit(GpsCallbacks *cb);
 static int GpsAdapterStart(void);
@@ -27,6 +30,7 @@ static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence
 static const void *GpsAdapterGetExtension(const char* name);
 
 static GpsLocation locationInfo;
+static GpsUtcTime utcTime = 0;
 static MsgQueue *msgQueue = NULL;
 static GPSEvent *mainLoopEvent = NULL;
 
@@ -57,6 +61,9 @@ static GpsCallbacks callbacks;
 static struct GpsDataCallbacks cbs = {
     .rmc_func = GpsDataRMCCB,
     .gga_func = GpsDataGGACB,
+    .time_func = GpsDataUTCTimeCB,
+    .svinfo_func = GpsDataSVInfoCB,
+    .nmea_func = GpsDataNMEACB
 };
 
 struct AdapterThreadCtx {
@@ -68,19 +75,22 @@ static struct AdapterThreadCtx context;
 class MsgHandlerStop: public MsgHandler {
 private:
     struct AdapterThreadCtx *context;
-    int running;
 public:
 
-    MsgHandlerStop(struct AdapterThreadCtx *ctx, int r)
+    MsgHandlerStop(struct AdapterThreadCtx *ctx)
     :context(ctx)
-    ,running(r)
     {
 
     }
 
     void proc(void)
     {
-        context->running = running;
+        GpsStatus status;
+
+        context->running = 0;
+        status.size = sizeof(GpsStatus);
+        status.status = GPS_STATUS_ENGINE_ON;
+        callbacks.status_cb(&status);
     }
 };
 
@@ -142,6 +152,7 @@ static int GpsAdapterInit(GpsCallbacks *cb)
 
     msgQueue = MsgQueueCreate();
     mainLoopEvent = GPSEventCreate();
+    utcTime = 0;
 
     GpsEngineInit(&cbs);
     callbacks.set_system_info_cb(&sysInfo);
@@ -165,6 +176,12 @@ static void GpsAdapterThreadEntry(void *arg)
 
     GpsEngineSetup();
 
+    GpsStatus status;
+    status.size = sizeof(GpsStatus);
+    status.status = GPS_STATUS_SESSION_BEGIN;
+
+    callbacks.status_cb(&status);
+
     while (context.running) {
         MsgHandler *handler = NULL;
         callbacks.acquire_wakelock_cb();
@@ -183,7 +200,7 @@ static void GpsAdapterThreadEntry(void *arg)
 static int GpsAdapterStop(void)
 {
     GPSLOGD("GpsAdapterStop");
-    MsgHandlerStop *stop = new (std::nothrow) MsgHandlerStop(&context, 0);
+    MsgHandlerStop *stop = new (std::nothrow) MsgHandlerStop(&context);
     if (stop) {
         callbacks.acquire_wakelock_cb();
         MsgQueueSend(msgQueue, stop);
@@ -266,4 +283,37 @@ static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data)
     locationInfo.altitude = data->altitude;
     locationInfo.accuracy = data->hdop;
     callbacks.location_cb(&locationInfo);
+}
+
+static void GpsDataUTCTimeCB(uint64_t utc)
+{
+    GPSLOGD("GpsDataUTCTimeCB:time %llu", utc);
+    utcTime = (GpsUtcTime)utc;
+}
+
+static void GpsDataSVInfoCB(int num, struct GPS_SV_INFO *infos)
+{
+    int i;
+    GnssSvStatus status;
+    status.size = sizeof(GnssSvStatus);
+    status.num_svs = num;
+    GPSLOGD("GpsDataSVInfoCB:num %d", num);
+    /* TODO:
+        1. fill flags field.
+        2. fill constellation field */
+    for (i = 0; i < num; i++) {
+        status.gnss_sv_list[i].size = sizeof(GnssSvInfo);
+        status.gnss_sv_list[i].svid = infos[i].svid;
+        status.gnss_sv_list[i].c_n0_dbhz = infos[i].cno;
+        status.gnss_sv_list[i].elevation = infos[i].elev;
+        status.gnss_sv_list[i].azimuth = infos[i].azim;
+    }
+
+    callbacks.gnss_sv_status_cb(&status);
+}
+
+static void GpsDataNMEACB(char *nmea, int length)
+{
+    GPSLOGD("GpsDataNMEACB:%s", nmea);
+    callbacks.nmea_cb(utcTime, nmea, length);
 }
