@@ -18,6 +18,8 @@ static void GpsDataUTCTimeCB(uint64_t utc);
 static void GpsDataSVInfoCB(int num, struct GPS_SV_INFO *infos);
 static void GpsDataNMEACB(char *nmea, int length);
 
+static GnssSvFlags ConvertToGnssSvFlags(struct GPS_SV_INFO *info);
+
 static int GpsAdapterInit(GpsCallbacks *cb);
 static int GpsAdapterStart(void);
 static int GpsAdapterStop(void);
@@ -288,18 +290,36 @@ static void GpsDataSVInfoCB(int num, struct GPS_SV_INFO *infos)
     status.size = sizeof(GnssSvStatus);
     status.num_svs = num;
     GPSLOGD("GpsDataSVInfoCB:num %d", num);
-    /* TODO:
-        1. fill flags field.
-        2. fill constellation field */
+
     for (i = 0; i < num; i++) {
         status.gnss_sv_list[i].size = sizeof(GnssSvInfo);
         status.gnss_sv_list[i].svid = infos[i].svid;
         status.gnss_sv_list[i].c_n0_dbhz = infos[i].cno;
         status.gnss_sv_list[i].elevation = infos[i].elev;
         status.gnss_sv_list[i].azimuth = infos[i].azim;
+        status.gnss_sv_list[i].flags = ConvertToGnssSvFlags(infos + i);
+        status.gnss_sv_list[i].constellation = GNSS_CONSTELLATION_GPS;
     }
 
     callbacks.gnss_sv_status_cb(&status);
+}
+
+static GnssSvFlags ConvertToGnssSvFlags(struct GPS_SV_INFO *info)
+{
+    GnssSvFlags flags = GNSS_SV_FLAGS_NONE;
+    if (info->flags.bits.svUsed) {
+        flags |= GNSS_SV_FLAGS_USED_IN_FIX;
+    }
+    if (info->flags.bits.orbitAvail) {
+        if (info->flags.bits.orbitEph) {
+            flags |= GNSS_SV_FLAGS_HAS_EPHEMERIS_DATA;
+        }
+        if (info->flags.bits.orbitAlm) {
+            flags |= GNSS_SV_FLAGS_HAS_ALMANAC_DATA;
+        }
+    }
+
+    return flags;
 }
 
 static void GpsDataNMEACB(char *nmea, int length)

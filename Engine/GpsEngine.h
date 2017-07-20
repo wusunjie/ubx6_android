@@ -49,7 +49,19 @@ struct GPS_NMEA_GGA_DATA {
 struct GPS_SV_INFO {
     uint8_t chn;
     uint8_t svid;
-    int8_t flags;
+    union {
+        uint8_t data;
+        struct {
+            uint8_t svUsed:1;
+            uint8_t diffCorr:1;
+            uint8_t orbitAvail:1;
+            uint8_t orbitEph:1;
+            uint8_t unhealthy:1;
+            uint8_t orbitAlm:1;
+            uint8_t orbitAop:1;
+            uint8_t smoothed:1;
+        } bits;
+    } flags;
     uint8_t cno;
     int8_t elev;
     int16_t azim;

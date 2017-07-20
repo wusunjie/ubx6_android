@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 
 #include "Engine/minmea.h"
 
@@ -127,7 +128,7 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
 
                         svinfos[i].chn = header->payload_check[8 + 12 * i];
                         svinfos[i].svid = header->payload_check[9 + 12 * i];
-                        svinfos[i].flags = header->payload_check[10 + 12 * i];
+                        svinfos[i].flags.data = header->payload_check[10 + 12 * i];
                         svinfos[i].cno = header->payload_check[12 + 12 * i];
                         svinfos[i].elev = header->payload_check[13 + 12 * i];
                         svinfos[i].azim = ((int16_t)(header->payload_check[14 + 12 * i]) << 8) |
@@ -165,12 +166,25 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
             switch (header->id) {
                 case 0x21:
                 {
+                    struct tm time;
+
                     GPSLOGD("year: %d, month: %d, day: %d",
                         ((uint16_t)(header->payload_check[12]) << 8) | header->payload_check[13],
                         header->payload_check[14], header->payload_check[15]);
 
-                    /* TODO: decode and transfer to utc time */
-                    cbs->time_func(0);
+                    time.tm_sec = header->payload_check[18];
+                    time.tm_min = header->payload_check[17];
+                    time.tm_hour = header->payload_check[16];
+                    time.tm_mday = header->payload_check[15];
+                    time.tm_mon = header->payload_check[14];
+                    time.tm_year = ((uint16_t)(header->payload_check[12]) << 8) | header->payload_check[13];
+                    time.tm_isdst = -1;
+
+                    time_t t = mktime(&time);
+
+                    if (t != -1) {
+                        cbs->time_func(t);
+                    }
                 }
                 break;
                 default:
