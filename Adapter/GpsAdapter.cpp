@@ -288,10 +288,10 @@ static void GpsDataSVInfoCB(int num, struct GPS_SV_INFO *infos)
     int i;
     GnssSvStatus status;
     status.size = sizeof(GnssSvStatus);
-    status.num_svs = num;
+    status.num_svs = num > GPS_MAX_SVS ? GPS_MAX_SVS:num;
     GPSLOGD("GpsDataSVInfoCB:num %d", num);
 
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < status.num_svs; i++) {
         status.gnss_sv_list[i].size = sizeof(GnssSvInfo);
         status.gnss_sv_list[i].svid = infos[i].svid;
         status.gnss_sv_list[i].c_n0_dbhz = infos[i].cno;
