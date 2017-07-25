@@ -19,7 +19,8 @@ ENGINE_SRC_FILES := \
 
 ADAPTER_SRC_FILE := \
     Adapter/GpsAdapter.cpp \
-    Adapter/GpsModule.c
+    Adapter/GpsModule.c \
+    Adapter/Configuration.c
 
 LOCAL_MODULE_TAGS := optional
 

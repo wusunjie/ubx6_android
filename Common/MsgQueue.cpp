@@ -10,7 +10,12 @@ MsgQueue *MsgQueueCreate(void)
 void MsgQueueFlush(MsgQueue *q)
 {
     if (q) {
-        q->clear();
+
+        while (!q->empty()) {
+            delete q->front();
+            q->pop_front();
+        }
+
     }
 }
 
@@ -38,5 +43,13 @@ MsgHandler *MsgQueueRecv(MsgQueue *q)
 
 void MsgQueueDestory(MsgQueue *q)
 {
-    delete q;
+    if (q) {
+
+        while (!q->empty()) {
+            delete q->front();
+            q->pop_front();
+        }
+
+        delete q;
+    }
 }

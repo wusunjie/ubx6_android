@@ -11,6 +11,8 @@
 #include "Common/GPSEvent.h"
 #include "Common/GPSLog.h"
 
+#include "Adapter/Configuration.h"
+
 static void GpsAdapterThreadEntry(void* arg);
 static void GpsDataRMCCB(struct GPS_NMEA_RMC_DATA *data);
 static void GpsDataGGACB(struct GPS_NMEA_GGA_DATA *data);
@@ -124,11 +126,6 @@ public:
 
 static int GpsAdapterInit(GpsCallbacks *cb)
 {
-    GnssSystemInfo sysInfo = {
-        .size = sizeof(GnssSystemInfo),
-        .year_of_hw = 2017
-    };
-
     memset(&locationInfo, 0, sizeof(GpsLocation));
     locationInfo = {
         .size = sizeof(GpsLocation),
@@ -147,8 +144,11 @@ static int GpsAdapterInit(GpsCallbacks *cb)
     utcTime = 0;
 
     GpsEngineInit(&cbs);
+    GnssSystemInfo sysInfo;
+    sysInfo.size = sizeof(GnssSystemInfo);
+    sysInfo.year_of_hw = GetConfigYearOfHW();
     callbacks.set_system_info_cb(&sysInfo);
-    callbacks.set_capabilities_cb(GPS_CAPABILITY_SCHEDULING | GPS_CAPABILITY_SINGLE_SHOT);
+    callbacks.set_capabilities_cb(GetConfigCapabilities());
     return 0;
 }
 
@@ -186,20 +186,30 @@ static void GpsAdapterThreadEntry(void *arg)
         callbacks.release_wakelock_cb();
         GpsEnginePollEvent();
     }
+
     GPSEventSignal(mainLoopEvent);
 }
 
 static int GpsAdapterStop(void)
 {
+    int ret = -1;
     GPSLOGD("GpsAdapterStop");
-    MsgHandlerStop *stop = new (std::nothrow) MsgHandlerStop(&context);
-    if (stop) {
-        callbacks.acquire_wakelock_cb();
-        MsgQueueSend(msgQueue, stop);
-        callbacks.release_wakelock_cb();
-        return GPSEventWait(mainLoopEvent);
+    callbacks.acquire_wakelock_cb();
+    if (msgQueue) {
+        MsgHandlerStop *stop = new (std::nothrow) MsgHandlerStop(&context);
+        if (stop) {
+            MsgQueueSend(msgQueue, stop);
+            ret = 0;
+        }
     }
-    return -1;
+    callbacks.release_wakelock_cb();
+
+    if (!ret) {
+        GPSEventWait(mainLoopEvent);
+        MsgQueueFlush(msgQueue);
+    }
+
+    return ret;
 }
 
 static void GpsAdapterCleanup(void)
@@ -223,14 +233,17 @@ static int GpsAdapterInjectTime(GpsUtcTime time, int64_t timeReference, int unce
 static int GpsAdapterInjectLocation(double latitude, double longitude, float accuracy)
 {
     GPSLOGD("GpsAdapterInjectLocation");
-    MsgHandlerInjectLocation *injectLocation = new (std::nothrow) MsgHandlerInjectLocation(&locationInfo, latitude, longitude, accuracy);
-    if (injectLocation) {
-        callbacks.acquire_wakelock_cb();
-        MsgQueueSend(msgQueue, injectLocation);
-        callbacks.release_wakelock_cb();
-        return 0;
+    int ret = -1;
+    callbacks.acquire_wakelock_cb();
+    if (msgQueue) {
+        MsgHandlerInjectLocation *injectLocation = new (std::nothrow) MsgHandlerInjectLocation(&locationInfo, latitude, longitude, accuracy);
+        if (injectLocation) {
+            MsgQueueSend(msgQueue, injectLocation);
+            ret = 0;
+        }
     }
-    return -1;
+    callbacks.release_wakelock_cb();
+    return ret;
 }
 
 static void GpsAdapterDeleteAidingData(GpsAidingData flags)
@@ -254,7 +267,10 @@ static int GpsAdapterSetPositionMode(GpsPositionMode mode, GpsPositionRecurrence
 static const void *GpsAdapterGetExtension(const char *name)
 {
     GPSLOGD("GpsAdapterGetExtension: %s", name);
-    (void)name;
+    if (!strcmp(GNSS_CONFIGURATION_INTERFACE, name)) {
+        return GetConfigurationInterface();
+    }
+
     return NULL;
 }
 
