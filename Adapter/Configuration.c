@@ -9,12 +9,10 @@
 struct merbok_gps_configs {
     uint32_t capabilities;
     uint16_t year_of_hw;
+    uint16_t location_flags;
 };
 
-static volatile struct merbok_gps_configs merbok_configs = {
-    .capabilities = GPS_CAPABILITY_SCHEDULING,
-    .year_of_hw = 2015
-};
+static struct merbok_gps_configs merbok_configs;
 
 static int first = 1;
 
@@ -38,8 +36,14 @@ MERBOK_GPS_LOCAL uint32_t GetConfigCapabilities(void)
 
 MERBOK_GPS_LOCAL uint16_t GetConfigYearOfHW(void)
 {
-    GPSLOGD("GetConfigYearOfHW %d", merbok_configs.year_of_hw);
+    GPSLOGD("GetConfigYearOfHW %u", merbok_configs.year_of_hw);
     return merbok_configs.year_of_hw;
+}
+
+MERBOK_GPS_LOCAL uint16_t GetConfigGPSLocationFlags(void)
+{
+    GPSLOGD("GetConfigGPSLocationFlags %x", merbok_configs.location_flags);
+    return merbok_configs.location_flags;
 }
 
 static void merbok_configuration_update(const char* config_data, int32_t length)
@@ -61,11 +65,15 @@ static void merbok_configuration_update(const char* config_data, int32_t length)
             if (pch) {
                 if (!strncmp("CAPABILITIES", line, 12)) {
                     sscanf(pch + 1, "%x", &(merbok_configs.capabilities));
-                    GPSLOGD("Config Update CAPABILITIES: %s", pch + 1);
+                    GPSLOGD("Config Update CAPABILITIES: %x", merbok_configs.capabilities);
                 }
                 else if (!strncmp("YEAR_OF_HW", line, 10)) {
                     sscanf(pch + 1, "%hu", &(merbok_configs.year_of_hw));
-                    GPSLOGD("Config Update YEAR_OF_HW: %s", pch + 1);
+                    GPSLOGD("Config Update YEAR_OF_HW: %u", merbok_configs.year_of_hw);
+                }
+                else if (!strncmp("GPS_LOCATION_FLAGS", line, 18)) {
+                    sscanf(pch + 1, "%hx", &(merbok_configs.location_flags));
+                    GPSLOGD("Config Update GPS_LOCATION_FLAGS: %x", merbok_configs.location_flags);
                 }
             }
             line = strtok_r(NULL, "\n", &saveptr);

@@ -127,13 +127,6 @@ public:
 static int GpsAdapterInit(GpsCallbacks *cb)
 {
     memset(&locationInfo, 0, sizeof(GpsLocation));
-    locationInfo = {
-        .size = sizeof(GpsLocation),
-        .flags =
-        GPS_LOCATION_HAS_LAT_LONG | GPS_LOCATION_HAS_ALTITUDE
-        | GPS_LOCATION_HAS_SPEED | GPS_LOCATION_HAS_BEARING |
-        GPS_LOCATION_HAS_ACCURACY,
-    };
 
     memset(&context, 0, sizeof(AdapterThreadCtx));
 
@@ -144,6 +137,8 @@ static int GpsAdapterInit(GpsCallbacks *cb)
     utcTime = 0;
 
     GpsEngineInit(&cbs);
+    locationInfo.size = sizeof(GpsLocation);
+    locationInfo.flags = GetConfigGPSLocationFlags();
     GnssSystemInfo sysInfo;
     sysInfo.size = sizeof(GnssSystemInfo);
     sysInfo.year_of_hw = GetConfigYearOfHW();

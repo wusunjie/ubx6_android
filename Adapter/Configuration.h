@@ -15,6 +15,8 @@ extern MERBOK_GPS_LOCAL uint32_t GetConfigCapabilities(void);
 
 extern MERBOK_GPS_LOCAL uint16_t GetConfigYearOfHW(void);
 
+extern MERBOK_GPS_LOCAL uint16_t GetConfigGPSLocationFlags(void);
+
 MERBOK_EXTERN_C_END
 
 #endif
