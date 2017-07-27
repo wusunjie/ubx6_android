@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "Device/GPSDeviceIF.h"
+#include "Engine/UBXCtrlHandler.h"
 
 // CFG_ANT payload struct
 typedef struct
@@ -171,16 +171,16 @@ static const struct UBXMsgType TYPE_NMEA_GST = {0xF0, 0x07};
 static const struct UBXMsgType TYPE_NMEA_VTG = {0xF0, 0x05};
 
 
-static int SendUbloxRequest(const uint8_t *pUbloxPacket, uint32_t dwSendLength);
+static int SendUbloxRequest(struct GPSDeviceIF *dev, const uint8_t *pUbloxPacket, uint32_t dwSendLength);
 static void EncodeToUbloxMessage(struct UBXMsgType sMsgType, const void *pData, uint8_t *pOutData,int iDataSize);
 static void CalcChecksum(uint8_t *ck, const uint8_t* pCalcData, int iDataLen);
-static int WriteUbxCfgMsg(struct UBXMsgType sMsgType, uint8_t rate);
-static int WriteUbxPollCFGNAVX5(void);
-static int WriteUbxSendCFGNAVX5(uint16_t wkn);
-static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType);
+static int WriteUbxCfgMsg(struct GPSDeviceIF *dev, struct UBXMsgType sMsgType, uint8_t rate);
+static int WriteUbxPollCFGNAVX5(struct GPSDeviceIF *dev);
+static int WriteUbxSendCFGNAVX5(struct GPSDeviceIF *dev, uint16_t wkn);
+static int WriteUbxCfgRst(struct GPSDeviceIF *dev, uint16_t type, uint8_t chResetType);
 
 
-int SetGpsRate(void)
+int SetGpsRate(struct GPSDeviceIF *dev)
 {
     UBLOX_CFG_RATE_PAYLOAD Payload;
     memset(&Payload, 0, sizeof(Payload));
@@ -193,55 +193,55 @@ int SetGpsRate(void)
 
     EncodeToUbloxMessage(TYPE_CFG_RATE, &Payload, pUbloxPacket, sizeof(Payload));
 
-    return  SendUbloxRequest(pUbloxPacket, LENGTH_CFG_RATE);
+    return SendUbloxRequest(dev, pUbloxPacket, LENGTH_CFG_RATE);
 }
 
-int SetGpsVerion(void)
+int SetGpsVerion(struct GPSDeviceIF *dev)
 {
     uint8_t pUbloxPacket[FIXLENGTH_NOPAYLOAD] = {0};
     EncodeToUbloxMessage(TYPE_MON_VER, NULL, pUbloxPacket, 0);
 
-    return SendUbloxRequest(pUbloxPacket, FIXLENGTH_NOPAYLOAD);
+    return SendUbloxRequest(dev, pUbloxPacket, FIXLENGTH_NOPAYLOAD);
 }
 
-int GpsNmeaSetting(int gstFlag)
+int GpsNmeaSetting(struct GPSDeviceIF *dev, int gstFlag)
 {
     if (gstFlag) {
-        return WriteUbxCfgMsg(TYPE_NMEA_GST, GPS_MSG_SEND_RATE);
+        return WriteUbxCfgMsg(dev, TYPE_NMEA_GST, GPS_MSG_SEND_RATE);
     }
 
     return 0;
 }
 
-int ResetGpsReceiver(uint16_t type)
+int ResetGpsReceiver(struct GPSDeviceIF *dev, uint16_t type)
 {
     uint8_t chResetType = CTRL_SOFTWARE_RESET_GPSONLY;
-    return WriteUbxCfgRst(type, chResetType);
+    return WriteUbxCfgRst(dev, type, chResetType);
 }
 
-int BookUbxNAVTIMEUTC(int bBookFlag)
+int BookUbxNAVTIMEUTC(struct GPSDeviceIF *dev, int bBookFlag)
 {
     if(1 == bBookFlag) {
-        return WriteUbxCfgMsg(TYPE_NAV_TIMEUTC, GPS_MSG_SEND_RATE);
+        return WriteUbxCfgMsg(dev, TYPE_NAV_TIMEUTC, GPS_MSG_SEND_RATE);
     }
     else {
-        return WriteUbxCfgMsg(TYPE_NAV_TIMEUTC, GPS_MSG_NOSEND_RATE);
+        return WriteUbxCfgMsg(dev, TYPE_NAV_TIMEUTC, GPS_MSG_NOSEND_RATE);
     }
 }
 
-int BookUbxCFGNAVX5(int bBookFlag)
+int BookUbxCFGNAVX5(struct GPSDeviceIF *dev, int bBookFlag)
 {
     uint16_t wknRollover = WEEK_ROLLOVER;
 
     if(1 == bBookFlag){
-        return WriteUbxSendCFGNAVX5(wknRollover);
+        return WriteUbxSendCFGNAVX5(dev, wknRollover);
     }
     else{
-        return WriteUbxPollCFGNAVX5();
+        return WriteUbxPollCFGNAVX5(dev);
     }
 }
 
-static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType)
+static int WriteUbxCfgRst(struct GPSDeviceIF *dev, uint16_t type, uint8_t chResetType)
 {
     UBLOX_CFG_RST_PAYLOAD Payload;
     memset(&Payload, 0, sizeof(Payload));
@@ -253,10 +253,10 @@ static int WriteUbxCfgRst(uint16_t type, uint8_t chResetType)
     
     EncodeToUbloxMessage(TYPE_CFG_RST, &Payload, pUbloxPacket, sizeof(Payload));
 
-    return SendUbloxRequest(pUbloxPacket, LENGTH_CFG_RST);
+    return SendUbloxRequest(dev, pUbloxPacket, LENGTH_CFG_RST);
 }
 
-static int WriteUbxCfgMsg(struct UBXMsgType sMsgType, uint8_t rate)
+static int WriteUbxCfgMsg(struct GPSDeviceIF *dev, struct UBXMsgType sMsgType, uint8_t rate)
 {
     UBLOX_CFG_MSG_PAYLOAD Payload;
     memset(&Payload, 0, sizeof(Payload));
@@ -269,19 +269,19 @@ static int WriteUbxCfgMsg(struct UBXMsgType sMsgType, uint8_t rate)
 
     EncodeToUbloxMessage(TYPE_CFG_MSG, &Payload, pUbloxPacket, sizeof(Payload));
 
-    return SendUbloxRequest(pUbloxPacket, LENGTH_CFG_MSG);
+    return SendUbloxRequest(dev, pUbloxPacket, LENGTH_CFG_MSG);
 }
 
-static int WriteUbxPollCFGNAVX5(void)
+static int WriteUbxPollCFGNAVX5(struct GPSDeviceIF *dev)
 {
     uint8_t pUbloxPacket[FIXLENGTH_NOPAYLOAD] = {0};
 
     EncodeToUbloxMessage(TYPE_CFG_NAVX5, NULL, pUbloxPacket, 0);
 
-    return  SendUbloxRequest(pUbloxPacket, FIXLENGTH_NOPAYLOAD);
+    return  SendUbloxRequest(dev, pUbloxPacket, FIXLENGTH_NOPAYLOAD);
 }
 
-static int WriteUbxSendCFGNAVX5(uint16_t wkn)
+static int WriteUbxSendCFGNAVX5(struct GPSDeviceIF *dev, uint16_t wkn)
 {
     UBLOX_CFG_NAVX5_PAYLOAD Payload;
     memset(&Payload, 0, sizeof(Payload));
@@ -315,10 +315,10 @@ static int WriteUbxSendCFGNAVX5(uint16_t wkn)
 
     EncodeToUbloxMessage(TYPE_CFG_NAVX5, &Payload, pUbloxPacket, sizeof(Payload));
 
-    return SendUbloxRequest(pUbloxPacket, LENGTH_CFG_NAVX5);
+    return SendUbloxRequest(dev, pUbloxPacket, LENGTH_CFG_NAVX5);
 }
 
-static int SendUbloxRequest(const uint8_t *pUbloxPacket, uint32_t dwSendLength)
+static int SendUbloxRequest(struct GPSDeviceIF *dev, const uint8_t *pUbloxPacket, uint32_t dwSendLength)
 {
     uint32_t dwWriteSize = 0;
 
@@ -326,7 +326,7 @@ static int SendUbloxRequest(const uint8_t *pUbloxPacket, uint32_t dwSendLength)
         return -1;
     }
 
-    dwWriteSize = GetGPSComDevice()->write((uint8_t *)pUbloxPacket, dwSendLength);
+    dwWriteSize = dev->write((uint8_t *)pUbloxPacket, dwSendLength);
 
     return (dwSendLength == dwWriteSize) ? 0 : -1;
 }

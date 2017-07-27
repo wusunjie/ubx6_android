@@ -10,8 +10,6 @@
 
 #include "Engine/minmea.h"
 
-#include "Device/GPSDeviceIF.h"
-
 #include "Common/GPSLog.h"
 
 enum UBXClassID {
@@ -39,27 +37,27 @@ static struct GpsDataCallbacks *cbs = NULL;
 static int IsUBXPacketValid(struct UBXPacketHeader *header);
 static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
-static int ReadNMEAString(void);
+static int ReadNMEAString(struct GPSDeviceIF *dev);
 
 void UBXParserInit(struct GpsDataCallbacks *cb)
 {
     cbs = cb;
 }
 
-int UBXPacketRead(void)
+int UBXPacketRead(struct GPSDeviceIF *dev)
 {
     int ret = -1;
     struct UBXPacketHeader header;
     uint8_t start = 0;
-    GetGPSComDevice()->read(&start, 1);
+    dev->read(&start, 1);
     if (0xB5 == start) {
         header.sync_char[0] = start;
-        GetGPSComDevice()->read(&(header.sync_char[1]), sizeof(header) - 1);
+        dev->read(&(header.sync_char[1]), sizeof(header) - 1);
         if (!IsUBXPacketValid(&header)) {
             struct UBXPacketHeader *packet =
             (struct UBXPacketHeader *)malloc(sizeof(header) + header.length + 2);
             memcpy(packet, &header, sizeof(header));
-            GetGPSComDevice()->read(packet->payload_check, packet->length + 2);
+            dev->read(packet->payload_check, packet->length + 2);
             if (!CheckUBXPacket(packet)) {
                 ret = UBXPacketParse(packet);
             }
@@ -67,7 +65,7 @@ int UBXPacketRead(void)
         }
     }
     else if ('$' == start) {
-        ret = ReadNMEAString();
+        ret = ReadNMEAString(dev);
     }
     return ret;
 }
@@ -198,14 +196,14 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
     return 0;
 }
 
-static int ReadNMEAString(void)
+static int ReadNMEAString(struct GPSDeviceIF *dev)
 {
     uint8_t status = 0;
     uint8_t data = 0;
     char strBuffer[256] = {0};
     size_t pos = 1;
     strBuffer[0] = '$';
-    while (1 == GetGPSComDevice()->read(&data, 1)) {
+    while (1 == dev->read(&data, 1)) {
         switch (status) {
             case 0:
             {

@@ -1,35 +1,33 @@
-#include "Device/GPSDeviceIF.h"
 #include "Engine/UBXCtrlHandler.h"
 #include "Engine/UBXParser.h"
+#include "Device/GPSDeviceIF.h"
 
 int GpsEngineInit(struct GpsDataCallbacks *cb)
 {
     GPSDeviceInit();
     UBXParserInit(cb);
-    return 0;
+    return GetGPSComDevice()->open();
 }
 
 int GpsEngineSetup(void)
 {
-    GetGPSComDevice()->open();
-
-    if (-1 == SetGpsRate()) {
+    if (-1 == SetGpsRate(GetGPSComDevice())) {
         return -1;
     }
 
-    if (-1 == BookUbxNAVTIMEUTC(1)) {
+    if (-1 == BookUbxNAVTIMEUTC(GetGPSComDevice(), 1)) {
         return -1;
     }
 
-    if (-1 == BookUbxCFGNAVX5(1)) {
+    if (-1 == BookUbxCFGNAVX5(GetGPSComDevice(), 1)) {
         return -1;
     }
 
-    if (-1 == SetGpsVerion()) {
+    if (-1 == SetGpsVerion(GetGPSComDevice())) {
         return -1;
     }
 
-    if (-1 == GpsNmeaSetting(1)) {
+    if (-1 == GpsNmeaSetting(GetGPSComDevice(), 1)) {
         return -1;
     }
 
@@ -38,5 +36,5 @@ int GpsEngineSetup(void)
 
 int GpsEnginePollEvent(void)
 {
-    return UBXPacketRead();
+    return UBXPacketRead(GetGPSComDevice());
 }
