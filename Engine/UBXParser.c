@@ -37,14 +37,14 @@ static struct GpsDataCallbacks *cbs = NULL;
 static int IsUBXPacketValid(struct UBXPacketHeader *header);
 static int CheckUBXPacket(struct UBXPacketHeader *header);
 static int UBXPacketParse(struct UBXPacketHeader *header);
-static int ReadNMEAString(struct GPSDeviceIF *dev);
+static int ReadNMEAString(const struct GPSDeviceIF *dev);
 
 void UBXParserInit(struct GpsDataCallbacks *cb)
 {
     cbs = cb;
 }
 
-int UBXPacketRead(struct GPSDeviceIF *dev)
+int UBXPacketRead(const struct GPSDeviceIF *dev)
 {
     int ret = -1;
     struct UBXPacketHeader header;
@@ -196,7 +196,7 @@ static int UBXPacketParse(struct UBXPacketHeader *header)
     return 0;
 }
 
-static int ReadNMEAString(struct GPSDeviceIF *dev)
+static int ReadNMEAString(const struct GPSDeviceIF *dev)
 {
     uint8_t status = 0;
     uint8_t data = 0;

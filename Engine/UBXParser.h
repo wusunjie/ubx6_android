@@ -6,6 +6,6 @@
 
 extern MERBOK_GPS_LOCAL void UBXParserInit(struct GpsDataCallbacks *cb);
 
-extern MERBOK_GPS_LOCAL int UBXPacketRead(struct GPSDeviceIF *dev);
+extern MERBOK_GPS_LOCAL int UBXPacketRead(const struct GPSDeviceIF *dev);
 
 #endif
